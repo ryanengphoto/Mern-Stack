@@ -8,11 +8,6 @@ function Login()
     const [loginName,setLoginName] = useState('');
     const [loginPassword,setPassword] = useState('');
 
-    Login: <input type="text" id="loginName" placeholder="Username"
-    onChange={handleSetLoginName} />
-    Password: <input type="password" id="loginPassword" placeholder="Password"
-    onChange={handleSetPassword} />
-
 
     function handleSetLoginName( e: any ) : void
     {
@@ -27,16 +22,16 @@ function Login()
     {
         event.preventDefault();
 
-        alert('doIt()');
-    }
+        alert('doIt() ' + loginName + ' ' + loginPassword);
+        navigate('/cards');
+    };
 
-    return(
+    return (
         <div id="loginDiv">
             <span id="inner-title">PLEASE LOG IN</span><br />
-            <input type="text" id="loginName" placeholder="Username" /><br />
-            <input type="password" id="loginPassword" placeholder="Password" /><br />
-            <input type="submit" id="loginButton" className="buttons" value = "Login"
-            onClick={doLogin} />
+            <input type="text" id="loginName" placeholder="Username" onChange={handleSetLoginName} /> <br />
+            <input type="password" id="loginPassword" placeholder="Password" onChange={handleSetPassword} /> <br />
+            <input type="submit" id="loginButton" className="buttons" value = "Login" onClick={doLogin} />
             <span id="loginResult">{message}</span>
         </div>
     );
