@@ -1,3 +1,9 @@
+const MongoClient = require('mongodb').MongoClient;
+const url = 'mongodb+srv://group9_db_user:KItFHkh4PritDTRh@cluster0.adjzkdp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+const client = new MongoClient(url);
+client.connect();
+
 const express = require('express');
 const cors = require('cors');
 
@@ -24,7 +30,7 @@ app.use((req, res, next) => {
     );
     next();
 });
-  
+
 
 // for debuggin'
 app.use((req, res) => {
