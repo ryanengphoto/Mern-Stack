@@ -18,36 +18,38 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'Hello World' });
 });
 
-app.post('/api/addcard', async (req, res, next) =>
+//add textbook API call
+app.post('/api/addtextbook', async (req, res, next) =>
 {
   // incoming: userId, color
   // outgoing: error
-  const { userId, card } = req.body;
-  const newCard = {Card:card,UserId:userId};
+  const { userId, textbook } = req.body;
+  const newTextbook = {Textbook:textbook,UserId:userId};
   var error = '';
 
   try
   {
-    const db = client.db('COP4331Cards');
-    const result = db.collection('Cards').insertOne(newCard);
+    const db = client.db('COP4331Textbooks');
+    const result = db.collection('Textbooks').insertOne(newTextbook);
   }
   catch(e)
   {
     error = e.toString();
   }
 
-  cardList.push( card );
+  textbookList.push( textbook );
   var ret = { error: error };
   res.status(200).json(ret);
 });
 
+//login API call
 app.post('/api/login', async (req, res, next) =>
 {
   // incoming: login, password
   // outgoing: id, firstName, lastName, error
   var error = '';
   const { login, password } = req.body;
-  const db = client.db('COP4331Cards');
+  const db = client.db('COP4331Textbooks');
   const results = await db.collection('Users').find({Login:login,Password:password}).toArray();
   
   var id = -1;
@@ -64,21 +66,22 @@ app.post('/api/login', async (req, res, next) =>
   var ret = { id:id, firstName:fn, lastName:ln, error:''};
   res.status(200).json(ret);
 });
-  
-app.post('/api/searchcards', async (req, res, next) =>
+
+//search textbooks API call
+app.post('/api/searchtextbooks', async (req, res, next) =>
 {
   // incoming: userId, search
   // outgoing: results[], error
   var error = '';
   const { userId, search } = req.body;
   var _search = search.trim();
-  const db = client.db('COP4331Cards');
-  const results = await db.collection('Cards').find({"Card":{$regex:_search+'.*', $options:'i'}}).toArray();
+  const db = client.db('COP4331Textbooks');
+  const results = await db.collection('Textbooks').find({"Textbook":{$regex:_search+'.*', $options:'i'}}).toArray();
   var _ret = [];
 
   for( var i=0; i<results.length; i++ )
   {
-    _ret.push( results[i].Card );
+    _ret.push( results[i].Textbook );
   }
 
   var ret = {results:_ret, error:error};
@@ -106,5 +109,5 @@ app.use((req, res) => {
 });
 
 // run server
-const PORT = process.env.PORT || 5001; //note: port 5000 is already taken for MacOS
+const PORT = process.env.PORT || 5001; //note: port 5000 is already taken for Mac
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,36 +1,38 @@
 import React, { useState } from 'react';
 
-function CardUI()
+function TextbookUI()
 {
     let _ud : any = localStorage.getItem('user_data');
     let ud = JSON.parse( _ud );
     let userId : string = ud.id;
     let firstName : string = ud.firstName;
     let lastName : string = ud.lastName;
+
     const [message,setMessage] = useState('');
     const [searchResults,setResults] = useState('');
-
-    const [cardList,setCardList] = useState('');
+    const [textbookList,setTextbookList] = useState('');
     const [search,setSearchValue] = React.useState('');
-    const [card,setCardNameValue] = React.useState('');
+    const [textbook,setTextbookNameValue] = React.useState('');
+    
     function handleSearchTextChange( e: any ) : void
     {
         setSearchValue( e.target.value );
     }
 
-    function handleCardTextChange( e: any ) : void
+    function handleTextbookTextChange( e: any ) : void
     {
-        setCardNameValue( e.target.value );
+        setTextbookNameValue( e.target.value );
     }
 
-    async function addCard(e:any) : Promise<void>
+    //add textbook
+    async function addTextbook(e:any) : Promise<void>
     {
         e.preventDefault();
-        let obj = {userId:userId,card:card};
+        let obj = {userId:userId,textbook:textbook};
         let js = JSON.stringify(obj);
         try
         {
-            const response = await fetch('http://localhost:5001/api/addcard',
+            const response = await fetch('http://localhost:5001/api/addtextbook',
                 {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
             
             let txt = await response.text();
@@ -42,7 +44,7 @@ function CardUI()
             }
             else
             {
-                setMessage('Card has been added');
+                setMessage('Textbook has been added');
             }
         }
         catch(error:any)
@@ -51,14 +53,16 @@ function CardUI()
         }
     };
 
-    async function searchCard(e:any) : Promise<void>
+    //search textbook
+    async function searchTextbook(e:any) : Promise<void>
     {
         e.preventDefault();
         let obj = {userId:userId,search:search};
         let js = JSON.stringify(obj);
+
         try
         {
-            const response = await fetch('http://localhost:5001/api/searchcards',
+            const response = await fetch('http://localhost:5001/api/searchtextbooks',
                 {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
             
             let txt = await response.text();
@@ -75,8 +79,8 @@ function CardUI()
                 }
             }
             
-            setResults('Card(s) have been retrieved');
-            setCardList(resultText);
+            setResults('Textbook(s) have been retrieved');
+            setTextbookList(resultText);
         }
         catch(error:any)
         {
@@ -86,17 +90,17 @@ function CardUI()
     };
 
     return (
-        <div id="cardUIDiv">
+        <div id="textbookUIDiv">
             <br />
-            Search: <input type="text" id="searchText" placeholder="Card To Search For" onChange={handleSearchTextChange}/>
-            <button type="button" id="searchCardButton" className="buttons" onClick={searchCard}> Search Card</button><br/>
-            <span id="cardSearchResult">{searchResults}</span>
-            <p id="cardList">{cardList}</p><br /><br />
-            Add: <input type="text" id="cardText" placeholder="Card To Add" onChange={handleCardTextChange} />
-            <button type="button" id="addCardButton" className="buttons" onClick={addCard}> Add Card </button><br />
-            <span id="cardAddResult">{message}</span>
+            Search: <input type="text" id="searchText" placeholder="Textbook To Search For" onChange={handleSearchTextChange}/>
+            <button type="button" id="searchTextbookButton" className="buttons" onClick={searchTextbook}> Search Textbook</button><br/>
+            <span id="textbookSearchResult">{searchResults}</span>
+            <p id="textbookList">{textbookList}</p><br /><br />
+            Add: <input type="text" id="textbookText" placeholder="Textbook To Add" onChange={handleTextbookTextChange} />
+            <button type="button" id="addTextbookButton" className="buttons" onClick={addTextbook}> Add Textbook </button><br />
+            <span id="textbookAddResult">{message}</span>
         </div>
     );
 }
 
-export default CardUI;
+export default TextbookUI;
