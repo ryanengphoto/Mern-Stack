@@ -21,7 +21,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// LOGIN
+// LOGIN, generate JWT Token for frontend to hold for privileged requests
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
