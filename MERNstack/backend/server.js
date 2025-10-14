@@ -26,7 +26,6 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'Hello World' });
 });
 
-<<<<<<< HEAD
 // example route to test MongoDB write
 app.post('/api/user', async (req, res) => {
   try {
@@ -40,13 +39,6 @@ app.post('/api/user', async (req, res) => {
   }
 });
 
-=======
-app.use('/api/textbooks', require('./routes/textbooks'));
-
-app.use('/api/users', require('./routes/users'));
-
-app.use('/api/auth', require('./routes/auth'))
->>>>>>> 3fbfb9a (add generated auth js)
 
 //add textbook API call
 app.post('/api/addtextbook', async (req, res) =>

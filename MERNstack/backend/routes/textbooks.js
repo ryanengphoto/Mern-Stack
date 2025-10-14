@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Textbook = require('../models/Textbook');
+const auth = require('../middleware/auth');
 const User = require('../models/User');
 
 // GET all textbooks with seller info
@@ -25,10 +26,21 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // POST a new textbook
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
-    const { title, author, isbn, price, condition, description, images, sellerId } = req.body;
-    const textbook = new Textbook({ title, author, isbn, price, condition, description, images, seller: sellerId });
+    const { title, author, isbn, price, condition, description, images } = req.body;
+
+    const textbook = new Textbook({
+      title,
+      author,
+      isbn,
+      price,
+      condition,
+      description,
+      images,
+      seller: req.user._id   // <- automatically tied to logged-in user
+    });
+
     await textbook.save();
     res.status(201).json(textbook);
   } catch (err) {
