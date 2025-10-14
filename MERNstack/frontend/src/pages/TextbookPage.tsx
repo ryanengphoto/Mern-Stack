@@ -1,16 +1,16 @@
 import PageTitle from '../components/PageTitle';
 import LoggedInName from '../components/LoggedInName';
-import CardUI from '../components/CardUI';
+import TextbookUI from '../components/TextbookUI';
 
-const CardPage = () =>
+const TextbookPage = () =>
 {
     return (
         <div>
         <PageTitle />
         <LoggedInName />
-        <CardUI />
+        <TextbookUI />
         </div>
     );
 }
 
-export default CardPage;
+export default TextbookPage;
