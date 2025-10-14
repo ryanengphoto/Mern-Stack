@@ -3,13 +3,8 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-<<<<<<< HEAD
 // REGISTER
 
-=======
-
-// REGISTER
->>>>>>> 1a11f2d (add generated auth js)
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -26,11 +21,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 // LOGIN, generate JWT Token for frontend to hold for privileged requests
-=======
-// LOGIN
->>>>>>> 1a11f2d (add generated auth js)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;

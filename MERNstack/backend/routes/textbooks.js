@@ -2,7 +2,6 @@
 const express = require('express');
 const router = express.Router();
 const Textbook = require('../models/Textbook');
-<<<<<<< HEAD
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
@@ -14,21 +13,11 @@ router.post('/all', async (req, res) => {
   try {
     const textbooks = await Textbook.find().populate('seller', 'name email phone');
     res.status(200).json({ textbooks });
-=======
-const User = require('../models/User');
-
-// GET all textbooks with seller info
-router.get('/', async (req, res) => {
-  try {
-    const textbooks = await Textbook.find().populate('seller', 'name email phone');
-    res.json(textbooks);
->>>>>>> 22eeba2 (start db schemas)
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-<<<<<<< HEAD
 /**
  * @desc Get textbooks by a specific user
  * @route POST /api/textbooks/by-user
@@ -39,19 +28,11 @@ router.post('/by-user', async (req, res) => {
     const { userId } = req.body;
     const textbooks = await Textbook.find({ seller: userId });
     res.status(200).json({ textbooks });
-=======
-// GET textbooks by a specific user
-router.get('/user/:userId', async (req, res) => {
-  try {
-    const textbooks = await Textbook.find({ seller: req.params.userId });
-    res.json(textbooks);
->>>>>>> 22eeba2 (start db schemas)
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-<<<<<<< HEAD
 /**
  * @desc Create a new textbook (protected)
  * @route POST /api/textbooks/add
@@ -72,13 +53,6 @@ router.post('/add', auth, async (req, res) => {
       seller: req.user._id   // <- automatically tied to logged-in user
     });
 
-=======
-// POST a new textbook
-router.post('/', async (req, res) => {
-  try {
-    const { title, author, isbn, price, condition, description, images, sellerId } = req.body;
-    const textbook = new Textbook({ title, author, isbn, price, condition, description, images, seller: sellerId });
->>>>>>> 22eeba2 (start db schemas)
     await textbook.save();
     res.status(201).json(textbook);
   } catch (err) {
@@ -86,7 +60,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 /**
  * @desc Search textbooks
  * @route POST /api/textbooks/search
@@ -181,6 +154,4 @@ router.post('/delete', auth, async (req, res) => {
   }
 });
 
-=======
->>>>>>> 22eeba2 (start db schemas)
 module.exports = router;
