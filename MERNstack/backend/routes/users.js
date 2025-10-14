@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // backend/routes/users.js
 const express = require('express');
 const router = express.Router();
@@ -22,12 +23,26 @@ router.post('/add', async (req, res) => {
     await user.save();
 
     res.status(201).json(user);
+=======
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+
+// Create a new user
+router.post('/', async (req, res) => {
+  try {
+    const { name, email, password, phone, address } = req.body;
+    const newUser = new User({ name, email, password, phone, address });
+    await newUser.save();
+    res.status(201).json(newUser);
+>>>>>>> 137f65e (create post routes)
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
   }
 });
 
+<<<<<<< HEAD
 /**
  * @desc Get all users
  * @route POST /api/users/all
@@ -97,4 +112,6 @@ router.post('/delete', auth, async (req, res) => {
   }
 });
 
+=======
+>>>>>>> 137f65e (create post routes)
 module.exports = router;

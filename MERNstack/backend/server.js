@@ -25,7 +25,10 @@ app.get('/api/ping', (req, res) => {
 
 app.use('/api/textbooks', require('./routes/textbooks'));
 
+<<<<<<< HEAD
 app.use('/api/users', require('./routes/users'));
+=======
+>>>>>>> 137f65e (create post routes)
 
 app.use('/api/auth', require('./routes/auth'))
 
