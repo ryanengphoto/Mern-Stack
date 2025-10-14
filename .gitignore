@@ -1,0 +1,56 @@
+# --------------------------
+# Node modules
+# --------------------------
+node_modules/
+**/node_modules/
+
+# --------------------------
+# Environment files
+# --------------------------
+.env
+**/.env
+.env.local
+.env.*.local
+
+# --------------------------
+# Logs
+# --------------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --------------------------
+# OS-specific files
+# --------------------------
+.DS_Store
+Thumbs.db
+
+# --------------------------
+# Build / dist folders (frontend)
+# --------------------------
+/frontend/build/
+/backend/dist/
+*.tsbuildinfo
+
+# --------------------------
+# Editor / IDE
+# --------------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --------------------------
+# Optional / misc
+# --------------------------
+*.tgz
+*.bak
+*.swp
+*.tmp
+
+# --------------------------
+# Mac / Linux swapfiles
+# --------------------------
+*.swp
