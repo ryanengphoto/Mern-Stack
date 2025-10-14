@@ -1,14 +1,12 @@
 // === Imports ===
 const express = require('express');
 const cors = require('cors');
+const User = require('./models/User');
+require('dotenv').config();
 const mongoose = require('mongoose');
 
-// === MongoDB connection ===
-const url = 'mongodb+srv://group9_db_user:KItFHkh4PritDTRh@cluster0.adjzkdp.mongodb.net/textbookMarket?retryWrites=true&w=majority&appName=Cluster0';
-
 // connect using mongoose
-// connect using mongoose (modern syntax, no deprecated options)
-mongoose.connect(url)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected via Mongoose'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
@@ -18,15 +16,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// === Example model (optional, for testing) ===
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  balance: Number
-});
-
-const User = mongoose.model('User', userSchema);
-
 // === Routes ===
 
 // test route
@@ -34,6 +23,8 @@ app.get('/api/ping', (req, res) => {
   console.log('Received /api/ping request');
   res.status(200).json({ message: 'Hello World' });
 });
+
+app.use('/api/textbooks', require('./routes/textbooks'));
 
 // example route to test MongoDB write
 app.post('/api/user', async (req, res) => {
