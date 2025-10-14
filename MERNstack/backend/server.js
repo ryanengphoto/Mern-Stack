@@ -39,11 +39,6 @@ app.post('/api/user', async (req, res) => {
   }
 });
 
-// example route to fetch users
-app.get('/api/users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
 
 //add textbook API call
 app.post('/api/addtextbook', async (req, res) =>
