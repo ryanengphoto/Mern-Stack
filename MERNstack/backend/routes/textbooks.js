@@ -5,28 +5,39 @@ const Textbook = require('../models/Textbook');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
-// GET all textbooks with seller info
-router.get('/', async (req, res) => {
+/**
+ * @desc Get ALL textbooks w/ seller info
+ * @route POST /api/textbooks/all
+ */
+router.post('/all', async (req, res) => {
   try {
     const textbooks = await Textbook.find().populate('seller', 'name email phone');
-    res.json(textbooks);
+    res.status(200).json({ textbooks });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET textbooks by a specific user
-router.get('/user/:userId', async (req, res) => {
+/**
+ * @desc Get textbooks by a specific user
+ * @route POST /api/textbooks/by-user
+ * @body { userId: string }
+ */
+router.post('/by-user', async (req, res) => {
   try {
-    const textbooks = await Textbook.find({ seller: req.params.userId });
-    res.json(textbooks);
+    const { userId } = req.body;
+    const textbooks = await Textbook.find({ seller: userId });
+    res.status(200).json({ textbooks });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST a new textbook
-router.post('/', auth, async (req, res) => {
+/**
+ * @desc Create a new textbook (protected)
+ * @route POST /api/textbooks/add
+ */
+router.post('/add', auth, async (req, res) => {
   try {
     const { title, author, isbn, price, condition, description, images } = req.body;
 
@@ -48,8 +59,12 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-//search textbooks API call
-app.post('/search', async (req, res) =>
+/**
+ * @desc Search textbooks
+ * @route POST /api/textbooks/search
+ * @body { search: string }
+ */
+router.post('/search', async (req, res) =>
 {
   try
   {
@@ -68,6 +83,47 @@ app.post('/search', async (req, res) =>
   {
     console.error(e);
     res.status(500).json({error: e.toString()});
+  }
+});
+
+/**
+ * @desc Update textbook info (protected)
+ * @route POST /api/textbooks/update
+ * @body { id: string, fieldsToUpdate: object }
+ */
+router.post('/update', auth, async (req, res) => {
+  try {
+    const { id, ...updates } = req.body;
+
+    const updated = await Textbook.findOneAndUpdate(
+      { _id: id, seller: req.user._id },
+      updates,
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'Textbook not found or unauthorized' });
+
+    res.status(200).json({ message: 'Textbook updated', textbook: updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * @desc Delete textbook (protected)
+ * @route POST /api/textbooks/delete
+ * @body { id: string }
+ */
+router.post('/delete', auth, async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    const deleted = await Textbook.findOneAndDelete({ _id: id, seller: req.user._id });
+    if (!deleted) return res.status(404).json({ error: 'Textbook not found or unauthorized' });
+
+    res.status(200).json({ message: 'Textbook deleted successfully' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
