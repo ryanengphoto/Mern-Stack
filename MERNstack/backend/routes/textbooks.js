@@ -48,4 +48,27 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+//search textbooks API call
+app.post('/search', async (req, res) =>
+{
+  try
+  {
+    const {search} = req.body;
+
+    //clean search
+    const searchTrimmed = search.trim();
+
+    //get textbooks matching search
+    const matchedTextbooks = await Textbook.find({title: {$regex: searchTrimmed, $options: 'i'}});
+    const result = matchedTextbooks.map(t => ({id: t._id, title: t.title, author: t.author, price: t.price, isbn: t.isbn, seller: t.seller}));
+
+    res.status(200).json({results: result, error: ''});
+  }
+  catch (e)
+  {
+    console.error(e);
+    res.status(500).json({error: e.toString()});
+  }
+});
+
 module.exports = router;
