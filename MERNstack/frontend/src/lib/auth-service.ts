@@ -2,9 +2,10 @@
 const API_URL = "http://localhost:5001/api";
 
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   name: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -84,7 +85,7 @@ export const authService = {
 
   logout(): void {
     localStorage.removeItem("auth_token");
-    localStorage.removeItem("user"); // ADD THIS LINE
+    localStorage.removeItem("user");
   },
 
   getStoredToken(): string | null {

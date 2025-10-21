@@ -14,7 +14,7 @@ import { useAuth } from "../lib/auth-context";
 export function UserMenu() {
   const { user, logout } = useAuth();
 
-  if (!user) return null;
+  if (!user || !user.name) return null;
 
   const initials = user.name
     .split(" ")

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, User, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useAuth } from "../lib/auth-context";
@@ -16,7 +17,11 @@ interface HeaderProps {
   onCartClick: () => void;
 }
 
-export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps) {
+export function Header({
+  onSearchChange,
+  searchQuery,
+  onCartClick,
+}: HeaderProps) {
   const { user } = useAuth();
   const { totalItems } = useCart();
   const [loginOpen, setLoginOpen] = useState(false);
@@ -29,10 +34,14 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-6">
             {/* Logo */}
-            <div className="flex items-center gap-2">
+            {/* Logo */}
+            <Link
+              to="/"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <h1 className="text-primary">baye</h1>
               <span className="text-muted-foreground">textbooks</span>
-            </div>
+            </Link>
 
             {/* Search Bar */}
             <div className="flex-1 max-w-2xl relative">
@@ -67,9 +76,10 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
 
               {user ? (
                 <>
-                  <Button>
-                    Sell Textbook
+                  <Button variant="outline" asChild>
+                    <Link to="/listings">Your Listings</Link>
                   </Button>
+                  <Button>Sell Textbook</Button>
                   <UserMenu />
                 </>
               ) : (
@@ -83,22 +93,6 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
                   </Button>
                 </>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Categories */}
-        <div className="border-t">
-          <div className="container mx-auto px-4 py-2">
-            <div className="flex gap-4 overflow-x-auto">
-              {["All", "Math", "Science", "Computer Science", "Engineering", "Business", "Literature", "Languages"].map((category) => (
-                <button
-                  key={category}
-                  className="px-3 py-1.5 rounded-md hover:bg-accent whitespace-nowrap transition-colors"
-                >
-                  {category}
-                </button>
-              ))}
             </div>
           </div>
         </div>
