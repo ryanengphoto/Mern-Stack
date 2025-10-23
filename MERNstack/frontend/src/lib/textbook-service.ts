@@ -103,4 +103,19 @@ export const textbookService = {
     const data = await response.json();
     return data.results;
   },
+
+  // Get all textbooks
+  async getAllTextbooks(): Promise<Textbook[]> {
+    const response = await fetch(`${API_URL}/all`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch textbooks");
+    }
+
+    const data = await response.json();
+    return data.textbooks;
+  },
 };

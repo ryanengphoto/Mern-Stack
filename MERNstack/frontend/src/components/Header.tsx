@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, User, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useAuth } from "../lib/auth-context";
@@ -10,6 +10,8 @@ import { LoginDialog } from "./auth/LoginDialog";
 import { SignupDialog } from "./auth/SignupDialog";
 import { ForgotPasswordDialog } from "./auth/ForgotPasswordDialog";
 import { Badge } from "./ui/badge";
+import { AddTextbookDialog } from "./AddTextbookDialog";
+import BayeLogo from "../../Baye-logo.png";
 
 interface HeaderProps {
   onSearchChange: (value: string) => void;
@@ -24,23 +26,23 @@ export function Header({
 }: HeaderProps) {
   const { user } = useAuth();
   const { totalItems } = useCart();
+  const navigate = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [addTextbookOpen, setAddTextbookOpen] = useState(false);
 
   return (
     <>
       <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center gap-6">
-            {/* Logo */}
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <h1 className="text-primary">baye</h1>
-              <span className="text-muted-foreground">textbooks</span>
+              <img src={BayeLogo} alt="Baye Textbooks" className="h-12" />
             </Link>
 
             {/* Search Bar */}
@@ -79,7 +81,9 @@ export function Header({
                   <Button variant="outline" asChild>
                     <Link to="/listings">Your Listings</Link>
                   </Button>
-                  <Button>Sell Textbook</Button>
+                  <Button onClick={() => setAddTextbookOpen(true)}>
+                    Sell Textbook
+                  </Button>
                   <UserMenu />
                 </>
               ) : (
@@ -114,6 +118,11 @@ export function Header({
         open={forgotPasswordOpen}
         onOpenChange={setForgotPasswordOpen}
         onSwitchToLogin={() => setLoginOpen(true)}
+      />
+      <AddTextbookDialog
+        open={addTextbookOpen}
+        onOpenChange={setAddTextbookOpen}
+        onSuccess={() => navigate("/listings")}
       />
     </>
   );
