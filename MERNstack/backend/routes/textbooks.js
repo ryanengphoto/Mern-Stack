@@ -49,6 +49,7 @@ router.post('/add', auth, async (req, res) => {
       condition,
       description,
       images,
+      buyerId,
       seller: req.user._id   // <- automatically tied to logged-in user
     });
 
@@ -66,7 +67,7 @@ router.post('/add', auth, async (req, res) => {
  */
 router.post('/search', async (req, res) =>
 {
-  try
+  try 
   {
     const {search} = req.body;
 
@@ -75,7 +76,7 @@ router.post('/search', async (req, res) =>
 
     //get textbooks matching search
     const matchedTextbooks = await Textbook.find({title: {$regex: searchTrimmed, $options: 'i'}});
-    const result = matchedTextbooks.map(t => ({id: t._id, title: t.title, author: t.author, price: t.price, isbn: t.isbn, seller: t.seller}));
+    const result = matchedTextbooks.map(t => ({id: t._id, title: t.title, author: t.author, price: t.price, isbn: t.isbn, seller: t.seller, buyer: t.buyer}));
 
     res.status(200).json({results: result, error: ''});
   }
@@ -104,6 +105,32 @@ router.post('/update', auth, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Textbook not found or unauthorized' });
 
     res.status(200).json({ message: 'Textbook updated', textbook: updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * @desc Purchase textbook (protected)
+ * @route POST /api/textbooks/purchase
+ * @body { id: string }
+ */
+router.post('/purchase', auth, async (req, res) => {
+  try {
+    const { id } = req.body;
+    const buyerId = req.user._id;
+
+    const textbookToBuy = await Textbook.findById(id).populate('seller', 'name email phone');
+    if (!textbookToBuy) return res.status(404).json({error: "No textbook found"});
+    if (textbookToBuy.seller._id.toString() === buyerId.toString())
+    {
+      return res.status(400).json({error: "This is your own textbook"});
+    }
+
+    textbookToBuy.buyer = buyerId
+    await textbookToBuy.save();
+
+    res.status(200).json({ message: 'Textbook purchased successfully' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
