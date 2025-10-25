@@ -216,9 +216,7 @@ export function AddTextbookDialog({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Images <span className="text-red-500">*</span>
-            </label>
+            <label className="block text-sm font-medium mb-2">Images</label>
             <p className="text-xs text-muted-foreground mb-3">
               Paste an image URL and click "Add Image" to include photos
             </p>
