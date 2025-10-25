@@ -11,7 +11,7 @@ import { SignupDialog } from "./auth/SignupDialog";
 import { ForgotPasswordDialog } from "./auth/ForgotPasswordDialog";
 import { Badge } from "./ui/badge";
 import { AddTextbookDialog } from "./AddTextbookDialog";
-import BayeLogo from "../../Baye-logo.png";
+import PapyrusLogo from "../../Papyrus logo.png";
 
 interface HeaderProps {
   onSearchChange: (value: string) => void;
@@ -42,7 +42,7 @@ export function Header({
               to="/"
               className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <img src={BayeLogo} alt="Baye Textbooks" className="h-12" />
+              <img src={PapyrusLogo} alt="Papyrus Textbooks" className="h-12" />
             </Link>
 
             {/* Search Bar */}
