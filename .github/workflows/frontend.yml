@@ -24,6 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd ./MERNstack/frontend
+          npm install
           npm ci
 
       - name: Run Vitest tests
