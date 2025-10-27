@@ -57,4 +57,10 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
+  test: {
+    globals: true,              // allows `describe`, `it`, `expect` globally
+    environment: "jsdom",       // so React can render in a fake browser
+    setupFiles: "./src/setupTests.ts", // optional setup script
+    css: true,                  // allows Tailwind / CSS imports in components
+  },
 });
