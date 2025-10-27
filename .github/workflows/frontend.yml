@@ -30,4 +30,5 @@ jobs:
       - name: Run Vitest tests
         run: |
           cd ./MERNstack/frontend
+          npm install --save-dev vitest @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom
           npx vitest run --coverage
