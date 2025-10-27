@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { authService, User } from "./auth-service";
 
 interface AuthContextType {
@@ -16,23 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on mount
   useEffect(() => {
-    const initAuth = async () => {
-      const token = authService.getStoredToken();
-      if (token) {
-        try {
-          const verifiedUser = await authService.verifyToken(token);
-          setUser(verifiedUser);
-        } catch (error) {
-          // Token is invalid, clear it
-          authService.logout();
-        }
-      }
-      setIsLoading(false);
-    };
-
-    initAuth();
+    const token = authService.getStoredToken();
+    const storedUser = authService.getUser();
+    if (token && storedUser) {
+      setUser(storedUser);
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -64,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         logout,
-        resetPassword
+        resetPassword,
       }}
     >
       {children}

@@ -1,10 +1,11 @@
 // Authentication service connected to Express backend
-const API_URL = 'http://localhost:5001/api';
+const API_URL = "http://localhost:5001/api";
 
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   name: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -15,70 +16,76 @@ export interface AuthResponse {
 export const authService = {
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Invalid email or password');
+      throw new Error(error.error || "Invalid email or password");
     }
 
-    return response.json();
+    const data = await response.json();
+    this.storeToken(data.token);
+    this.storeUser(data.user); // ADD THIS LINE
+    return data;
   },
 
-  async signup(email: string, password: string, name: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name })
+  async signup(
+    email: string,
+    password: string,
+    name: string
+  ): Promise<AuthResponse> {
+    const response = await fetch(`${API_URL}/auth/register`, {
+      // CHANGE: signup → register
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Signup failed');
+      throw new Error(error.error || "Signup failed");
     }
 
-    return response.json();
+    const data = await response.json();
+    this.storeToken(data.token);
+    this.storeUser(data.user); // ADD THIS LINE
+    return data;
   },
 
   async resetPassword(email: string): Promise<{ message: string }> {
     const response = await fetch(`${API_URL}/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Password reset failed');
+      throw new Error(error.error || "Password reset failed");
     }
 
     return response.json();
   },
 
-  async verifyToken(token: string): Promise<User | null> {
-    try {
-      const response = await fetch(`${API_URL}/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      });
+  getUser(): User | null {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
+  },
 
-      if (!response.ok) {
-        return null;
-      }
+  storeUser(user: User): void {
+    localStorage.setItem("user", JSON.stringify(user));
+  },
 
-      return response.json();
-    } catch {
-      return null;
-    }
+  clearUser(): void {
+    localStorage.removeItem("user");
   },
 
   logout(): void {
-    // Clear token from storage
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("user");
   },
 
   getStoredToken(): string | null {
@@ -87,5 +94,5 @@ export const authService = {
 
   storeToken(token: string): void {
     localStorage.setItem("auth_token", token);
-  }
+  },
 };

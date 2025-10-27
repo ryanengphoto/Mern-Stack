@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, User, ShoppingCart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useAuth } from "../lib/auth-context";
@@ -9,6 +10,8 @@ import { LoginDialog } from "./auth/LoginDialog";
 import { SignupDialog } from "./auth/SignupDialog";
 import { ForgotPasswordDialog } from "./auth/ForgotPasswordDialog";
 import { Badge } from "./ui/badge";
+import { AddTextbookDialog } from "./AddTextbookDialog";
+import PapyrusLogo from "../../Papyrus logo.png";
 
 interface HeaderProps {
   onSearchChange: (value: string) => void;
@@ -16,23 +19,31 @@ interface HeaderProps {
   onCartClick: () => void;
 }
 
-export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps) {
+export function Header({
+  onSearchChange,
+  searchQuery,
+  onCartClick,
+}: HeaderProps) {
   const { user } = useAuth();
   const { totalItems } = useCart();
+  const navigate = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [addTextbookOpen, setAddTextbookOpen] = useState(false);
 
   return (
     <>
       <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center gap-6">
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <h1 className="text-primary">baye</h1>
-              <span className="text-muted-foreground">textbooks</span>
-            </div>
+            <Link
+              to="/"
+              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <img src={PapyrusLogo} alt="Papyrus Textbooks" className="h-12" />
+            </Link>
 
             {/* Search Bar */}
             <div className="flex-1 max-w-2xl relative">
@@ -67,7 +78,10 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
 
               {user ? (
                 <>
-                  <Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/listings">Your Listings</Link>
+                  </Button>
+                  <Button onClick={() => setAddTextbookOpen(true)}>
                     Sell Textbook
                   </Button>
                   <UserMenu />
@@ -83,22 +97,6 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
                   </Button>
                 </>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Categories */}
-        <div className="border-t">
-          <div className="container mx-auto px-4 py-2">
-            <div className="flex gap-4 overflow-x-auto">
-              {["All", "Math", "Science", "Computer Science", "Engineering", "Business", "Literature", "Languages"].map((category) => (
-                <button
-                  key={category}
-                  className="px-3 py-1.5 rounded-md hover:bg-accent whitespace-nowrap transition-colors"
-                >
-                  {category}
-                </button>
-              ))}
             </div>
           </div>
         </div>
@@ -120,6 +118,11 @@ export function Header({ onSearchChange, searchQuery, onCartClick }: HeaderProps
         open={forgotPasswordOpen}
         onOpenChange={setForgotPasswordOpen}
         onSwitchToLogin={() => setLoginOpen(true)}
+      />
+      <AddTextbookDialog
+        open={addTextbookOpen}
+        onOpenChange={setAddTextbookOpen}
+        onSuccess={() => navigate("/listings")}
       />
     </>
   );
