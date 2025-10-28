@@ -1,5 +1,6 @@
 // backend/routes/users.js
 const express = require('express');
+const crypto = require('crypto'); // sendmailer functions
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
@@ -14,16 +15,45 @@ router.post('/add', async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
-    // prevent dupes
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'User already exists' });
+    const exisitingUser = await User.findOne({ email });
+    if (exisitingUser) {
+      return res.status(400).json({ error: 'Email already in use.' });
+    }
 
-    const user = new User({ name, email, password, phone, address });
-    await user.save();
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
 
-    res.status(201).json(user);
+    const newUser = new User({
+      name,
+      email,
+      password,
+      phone,
+      address,
+      verificationToken,
+      verificationExpires,
+      verified: false
+    })
+    
+    await newUser.save();
+
+    const verifyUrl = `${process.env.CLIENT_URL}/verify/${verificationToken}`;
+    await sendVerificationEmail(email, verifyUrl);
+
+    const userResponse = {
+      _id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      address: newUser.address,
+      verified: newUser.verified
+    };
+
+    res.status(201).json({
+      message: 'User created. Please check your email to verify your account.',
+      user: userResponse
+    });
   } catch (err) {
-    console.error(err);
+    console.error('User creation error:', err);
     res.status(400).json({ error: err.message });
   }
 });
