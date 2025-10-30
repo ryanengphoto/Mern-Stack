@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
     });
     await user.save();
 
-    const verifyUrl = `${CLIENT_URL}/verify/${verificationToken}`;
+    const verifyUrl = `${CLIENT_URL}api/auth/verify/${verificationToken}`;
     await sendVerificationEmail(email, verifyUrl);
     
     res.status(201).json({ 
