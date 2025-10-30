@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
     });
     await user.save();
 
-    const verifyUrl = `${CLIENT_URL}api/auth/verify/${verificationToken}`;
+    const verifyUrl = `${CLIENT_URL}/api/auth/verify/${verificationToken}`;
     await sendVerificationEmail(email, verifyUrl);
     
     res.status(201).json({ 
@@ -150,5 +150,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Failed to login' });
   }
 });
+
 
 module.exports = router;
