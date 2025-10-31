@@ -1,0 +1,360 @@
+openapi: 3.0.3
+info:
+  title: Papyrus API
+  description: >
+     This contains the API definitions for the Papyrus textbook marketplace project for the MERN stack COP4331 assignment.
+  version: 1.0.0
+servers:
+  - url: 'https://lamp-stack4331.xyz'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /api/ping:
+    get:
+      summary: ping
+      description: "GET request to check API status. Returns 200 OK with response body."
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              example:
+                message: "pong"
+
+  /api/textbooks:
+    post:
+      summary: Post data
+      description: "Submit a new textbook entry."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                isbn:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                sellerId:
+                  type: string
+            examples:
+              calculusExample:
+                summary: Sample textbook
+                value:
+                  title: "Calculus 101"
+                  author: "James Stewart"
+                  isbn: "1234567890"
+                  price: 50
+                  condition: "like new"
+                  description: "Hardcover edition, excellent condition"
+                  images:
+                    - "https://example.com/image1.jpg"
+                    - "https://example.com/image2.jpg"
+                  sellerId: "68ea8ed6551ba74909e7c329"
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+
+  /api/auth/register:
+    post:
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                phone:
+                  type: string
+            examples:
+              userExample:
+                summary: Sample registration
+                value:
+                  name: "John Doe"
+                  email: "john4@example.com"
+                  password: "secret123"
+                  phone: "1234567890"
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+
+  /api/auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+            examples:
+              loginExample:
+                summary: Sample login
+                value:
+                  email: "john2@example.com"
+                  password: "secret123"
+      responses:
+        '200':
+          description: OK
+
+  /api/users/me:
+    post:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                id: "68fb973273257e37f0dfb49d"
+                name: "John Doe"
+                email: "john4@example.com"
+                phone: "1234567890"
+
+  /api/users/update:
+    post:
+      summary: Update user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                password:
+                  type: string
+            examples:
+              updateUserExample:
+                summary: Update phone and password
+                value:
+                  phone: "9876543210"
+                  password: "newpassword123"
+      responses:
+        '200':
+          description: OK
+
+  /api/users/delete:
+    post:
+      summary: Delete user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /api/users/all:
+    post:
+      summary: Get all users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                users:
+                  - id: "68fb973273257e37f0dfb49d"
+                    name: "John Doe"
+                    email: "john4@example.com"
+                    phone: "1234567890"
+
+  /api/textbooks/all:
+    post:
+      summary: Get all textbooks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                textbooks:
+                  - id: "68fb973273257e37f0dfb49d"
+                    title: "Calculus 101"
+                    author: "James Stewart"
+                    isbn: "1234567890"
+                    price: 50
+                    condition: "like new"
+
+  /api/textbooks/by-user:
+    post:
+      summary: Get textbooks by user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+            examples:
+              byUserExample:
+                summary: Get textbooks for a user
+                value:
+                  userId: "68ee99650756d279636342a2"
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/search:
+    post:
+      summary: Search textbooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+            examples:
+              searchExample:
+                summary: Search for textbooks
+                value:
+                  search: "Calculus"
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/add:
+    post:
+      summary: Add textbook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                isbn:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+            examples:
+              addTextbookExample:
+                summary: Add new textbook
+                value:
+                  title: "Calculus 101"
+                  author: "James Stewart"
+                  isbn: "978-1234567890"
+                  price: 50
+                  condition: "used"
+                  description: "Great condition"
+                  images:
+                    - "https://example.com/image1.jpg"
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+
+  /api/textbooks/update:
+    post:
+      summary: Update textbook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+            examples:
+              updateTextbookExample:
+                summary: Update textbook info
+                value:
+                  id: "68fb973273257e37f0dfb49d"
+                  price: 45
+                  condition: "new"
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/delete:
+    post:
+      summary: Delete textbook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+            examples:
+              deleteTextbookExample:
+                summary: Delete a textbook by ID
+                value:
+                  id: "<TEXTBOOK_ID>"
+      responses:
+        '200':
+          description: OK
