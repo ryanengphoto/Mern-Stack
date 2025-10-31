@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: Papyrus API
+  description: >
+     This contains the API defintions for the Papyrus textbook markektplace project for the MERN stack COP4331 assignment.
+  version: 1.0.0
+servers:
+  - url: 'https://lamp-stack4331.xyz'
+
+paths:
+  /api/ping:
+    get:
+      summary: ping
+      description: "GET request to check API status. Returns 200 OK with response body."
+      responses:
+        '200':
+          description: Successful response
+
+  /api/textbooks:
+    post:
+      summary: Post data
+      description: "Submit a new textbook entry."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                isbn:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                sellerId:
+                  type: string
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+
+  /api/auth/register:
+    post:
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+
+  /api/auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/users/me:
+    post:
+      summary: Get current user
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/users/update:
+    post:
+      summary: Update user
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/users/delete:
+    post:
+      summary: Delete user
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/users/all:
+    post:
+      summary: Get all users
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/all:
+    post:
+      summary: Get all textbooks
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/by-user:
+    post:
+      summary: Get textbooks by user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/search:
+    post:
+      summary: Search textbooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/add:
+    post:
+      summary: Add textbook
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                isbn:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+                description:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/update:
+    post:
+      summary: Update textbook
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                price:
+                  type: number
+                condition:
+                  type: string
+      responses:
+        '200':
+          description: OK
+
+  /api/textbooks/delete:
+    post:
+      summary: Delete textbook
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        '200':
+          description: OK
