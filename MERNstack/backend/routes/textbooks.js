@@ -49,7 +49,6 @@ router.post('/add', auth, async (req, res) => {
       condition,
       description,
       images,
-      buyerId,
       seller: req.user._id   // <- automatically tied to logged-in user
     });
 
@@ -121,7 +120,14 @@ router.post('/purchase', auth, async (req, res) => {
     const buyerId = req.user._id;
 
     const textbookToBuy = await Textbook.findById(id).populate('seller', 'name email phone');
+    
     if (!textbookToBuy) return res.status(404).json({error: "No textbook found"});
+    
+    const buyer = await User.findById(buyerId);
+    const seller = await User.findById(textbookToBuy.seller._id);
+
+    if (textbookToBuy.price > buyer.balance) return res.status(404).json({error: "User doesn't have enough money"});
+
     if (textbookToBuy.seller._id.toString() === buyerId.toString())
     {
       return res.status(400).json({error: "This is your own textbook"});
@@ -129,6 +135,12 @@ router.post('/purchase', auth, async (req, res) => {
 
     textbookToBuy.buyer = buyerId
     await textbookToBuy.save();
+
+    //update balances
+    buyer.balance -= textbookToBuy.price;
+    await buyer.save();
+    seller.balance += textbookToBuy.price;
+    await seller.save();
 
     res.status(200).json({ message: 'Textbook purchased successfully' });
   } catch (err) {

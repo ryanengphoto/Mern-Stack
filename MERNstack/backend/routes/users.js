@@ -29,6 +29,7 @@ router.post('/add', async (req, res) => {
       password,
       phone,
       address,
+      balance: 100,
       verificationToken,
       verificationExpires,
       verified: false
@@ -110,6 +111,29 @@ router.post('/update', auth, async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+/**
+ * @desc Adds $100 to user's balance
+ * @route POST /api/users/addBalance
+ * @access Protected
+ * */
+router.post('/addBalance', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({error: 'User not found'});
+
+    user.balance += 100;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Balance was updated successfully'
+    });
+  }
+  catch (err) {
+    res.status(400).json({error: err.message});
+  }
+});
+
 
 /**
  * @desc Delete logged-in user's account

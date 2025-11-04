@@ -10,7 +10,7 @@ const textbookSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   images: [String], // array of image URLs
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  buyer: {type: String, default: ''},
+  buyer: {type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null},
   createdAt: { type: Date, default: Date.now },
 });
 
