@@ -126,7 +126,7 @@ router.post('/purchase', auth, async (req, res) => {
     const buyer = await User.findById(buyerId);
     const seller = await User.findById(textbookToBuy.seller._id);
 
-    if (textbookToBuy.price > buyer.balance) return res.status(404).json({error: "User doesn't have enough money"});
+    if (textbookToBuy.price > buyer.balance) return res.status(400).json({error: "User doesn't have enough money"});
 
     if (textbookToBuy.seller._id.toString() === buyerId.toString())
     {
