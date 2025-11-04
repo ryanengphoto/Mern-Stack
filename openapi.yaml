@@ -149,6 +149,7 @@ paths:
                 name: "John Doe"
                 email: "john4@example.com"
                 phone: "1234567890"
+                balance: 200
 
   /api/users/update:
     post:
@@ -201,6 +202,31 @@ paths:
                     name: "John Doe"
                     email: "john4@example.com"
                     phone: "1234567890"
+
+    /api/users/addBalance:
+    post:
+      summary: Add $100 user's balance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Balance updated successfully
+          content:
+            application/json:
+              example:
+                message: "Balance was updated successfully"
+                user:
+                  id: "68fb973273257e37f0dfb49d"
+                  name: "John Doe"
+                  email: "john4@example.com"
+                  phone: "1234567890"
+                  balance: 200
+        '400':
+          description: Error updating user balance
+          content:
+            application/json:
+              example:
+                error: "User not found"
 
   /api/textbooks/all:
     post:
@@ -335,6 +361,58 @@ paths:
       responses:
         '200':
           description: OK
+
+  /api/textbooks/purchase:
+  post:
+    summary: Purchase textbook
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of textbook to purchase
+          examples:
+            purchaseExample:
+              summary: Purchase a textbook
+              value:
+                id: "68fb973273257e37f0dfb49d"
+  responses:
+    '200':
+      description: Textbook purchased successfully
+      content:
+        application/json:
+          example:
+            message: "Textbook purchased successfully"
+            textbook:
+              id: "68fb973273257e37f0dfb49d"
+              title: "Calculus 101"
+              price: 50
+              sellerId: "68ea8ed6551ba74909e7c329"
+              buyerId: "68fb973273257e37f0dfb49d"
+            buyer:
+              id: "68fb973273257e37f0dfb49d"
+              balance: 150
+            seller:
+              id: "68ea8ed6551ba74909e7c329"
+              balance: 250
+    '400':
+      description: User trying to purchase their own textbook or doesn't have enough money
+      content:
+        application/json:
+          example:
+            error: "This is your own textbook"
+    '404':
+      description: Not found (textbook or user not found)
+      content:
+        application/json:
+          example:
+            error: "No textbook found"
 
   /api/textbooks/delete:
     post:
