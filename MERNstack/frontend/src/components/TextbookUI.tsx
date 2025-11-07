@@ -32,7 +32,7 @@ function TextbookUI()
         let js = JSON.stringify(obj);
         try
         {
-            const response = await fetch('http://localhost:5001/api/addtextbook',
+            const response = await fetch('https://lamp-stack4331.xyz/api/addtextbook',
                 {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
             
             let txt = await response.text();
@@ -62,7 +62,7 @@ function TextbookUI()
 
         try
         {
-            const response = await fetch('http://localhost:5001/api/searchtextbooks',
+            const response = await fetch('https://lamp-stack4331.xyz/api/searchtextbooks',
                 {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
             
             let txt = await response.text();

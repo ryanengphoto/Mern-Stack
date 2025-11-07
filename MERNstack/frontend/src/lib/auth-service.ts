@@ -1,5 +1,5 @@
 // Authentication service connected to Express backend
-const API_URL = "http://localhost:5001/api";
+const API_URL = "https://lamp-stack4331.xyz/api";
 
 export interface User {
   _id: string;

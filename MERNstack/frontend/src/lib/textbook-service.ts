@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "./api";
 
-const API_URL = "http://localhost:5001/api/textbooks";
+const API_URL = "https://lamp-stack4331.xyz/api/textbooks";
 
 export interface Textbook {
   _id: string;
