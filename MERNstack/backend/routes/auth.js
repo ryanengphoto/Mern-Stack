@@ -5,7 +5,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendVerificationEmail } = require('../utils/emailService');
-const CLIENT_URL = 'http://lamp-stack4331.xyz';
+const CLIENT_URL = 'https://lamp-stack4331.xyz';
 
 // REGISTER
 router.post('/register', async (req, res) => {
