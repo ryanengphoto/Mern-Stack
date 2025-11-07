@@ -9,8 +9,8 @@ const textbookToProduct = (textbook: Textbook): Product => {
   const conditionMap: Record<string, Product["condition"]> = {
     "new": "New",
     "like new": "Like New",
-    "used": "Good",
-    "very used": "Acceptable",
+    "used": "Used",
+    "very used": "Very Used",
   };
 
   return {
@@ -19,7 +19,7 @@ const textbookToProduct = (textbook: Textbook): Product => {
     author: textbook.author || "Unknown Author",
     edition: "", // Not in our schema, leave empty
     price: textbook.price,
-    condition: conditionMap[textbook.condition] || "Good",
+    condition: conditionMap[textbook.condition],
     image: textbook.images?.[0] || "", // Use first image or empty
     seller: typeof textbook.seller === "string" ? "" : (textbook.seller as any)?.name || "",
     location: "", // Not in our schema

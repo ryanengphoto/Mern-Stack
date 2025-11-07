@@ -8,7 +8,7 @@ export interface Product {
   author: string;
   edition: string;
   price: number;
-  condition: "Like New" | "Good" | "Acceptable" | "New";
+  condition: "Like New" | "Used" | "Very Used" | "New";
   image: string;
   seller: string;
   location: string;
