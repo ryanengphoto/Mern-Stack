@@ -23,6 +23,7 @@ const textbookToProduct = (textbook: Textbook): Product => {
     image: textbook.images?.[0] || "", // Use first image or empty
     seller: typeof textbook.seller === "string" ? "" : (textbook.seller as any)?.name || "",
     location: "", // Not in our schema
+    description: textbook.description,
     isbn: textbook.isbn || "",
   };
 };

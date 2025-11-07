@@ -112,8 +112,9 @@ export function ProductDetail({ product, open, onOpenChange }: ProductDetailProp
                 This textbook is in {product.condition.toLowerCase()} condition. 
                 {product.condition === "New" && " Never used, no markings or wear."}
                 {product.condition === "Like New" && " Minimal wear, no markings."}
-                {product.condition === "Good" && " Some wear, may have highlighting."}
-                {product.condition === "Acceptable" && " Significant wear, but fully readable."}
+                {product.condition === "Used" && " Some wear, may have highlighting."}
+                {product.condition === "Very Used" && " Significant wear, but fully readable."}
+                {product.description}
               </p>
             </div>
           </div>

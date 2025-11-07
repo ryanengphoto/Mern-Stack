@@ -12,6 +12,7 @@ export interface Product {
   image: string;
   seller: string;
   location: string;
+  description?: string;
   isbn: string;
 }
 
