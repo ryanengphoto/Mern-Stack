@@ -114,6 +114,7 @@ export function ProductDetail({ product, open, onOpenChange }: ProductDetailProp
                 {product.condition === "Like New" && " Minimal wear, no markings."}
                 {product.condition === "Used" && " Some wear, may have highlighting."}
                 {product.condition === "Very Used" && " Significant wear, but fully readable."}
+                \n\n
                 {product.description}
               </p>
             </div>
