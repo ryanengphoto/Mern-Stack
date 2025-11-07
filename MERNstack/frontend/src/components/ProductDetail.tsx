@@ -115,7 +115,7 @@ export function ProductDetail({ product, open, onOpenChange }: ProductDetailProp
                 {product.condition === "Used" && " Some wear, may have highlighting."}
                 {product.condition === "Very Used" && " Significant wear, but fully readable."}
                 <br /><br />
-                User Description<br />
+                <h4>User Description</h4>
                 {product.description}
               </p>
             </div>
