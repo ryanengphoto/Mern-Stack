@@ -15,13 +15,20 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product, open, onOpenChange }: ProductDetailProps) {
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
   if (!product) return null;
 
   const handleAddToCart = () => {
+    const alreadyInCart = items.some(item => item.product.id === product.id);
+
     addToCart(product);
-    toast.success(`${product.title} added to cart`);
+
+    if (alreadyInCart) {
+      toast(`"${product.title}" is already in your cart`);
+    } else {
+      toast.success(`${product.title} added to cart`);
+    }
   };
 
   return (
@@ -114,9 +121,8 @@ export function ProductDetail({ product, open, onOpenChange }: ProductDetailProp
                 {product.condition === "Like New" && " Minimal wear, no markings."}
                 {product.condition === "Used" && " Some wear, may have highlighting."}
                 {product.condition === "Very Used" && " Significant wear, but fully readable."}
-                <br /><br />
-                <h4>User Description</h4>
-                {product.description}
+              <h4>User Description</h4>
+              <p className="text-muted-foreground">{product.description}</p>
               </p>
             </div>
           </div>

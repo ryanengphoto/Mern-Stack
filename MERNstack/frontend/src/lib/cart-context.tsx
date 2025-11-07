@@ -30,23 +30,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("baye_cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product) => {
-    setItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.product.id === product.id);
-      
-      if (existingItem) {
-        // Product already in cart, increase quantity
-        return prevItems.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        // New product, add to cart
-        return [...prevItems, { product, quantity: 1 }];
-      }
-    });
-  };
+const addToCart = (product: Product) => {
+  setItems((prevItems) => {
+    const exists = prevItems.some((item) => item.product.id === product.id);
+
+    if (exists) {
+      // already in cart, do nothing
+      return prevItems;
+    } else {
+      // add new product with quantity 1
+      return [...prevItems, { product, quantity: 1 }];
+    }
+  });
+};
 
   const removeFromCart = (productId: number) => {
     setItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
