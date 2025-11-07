@@ -43,7 +43,7 @@ export function UserMenu() {
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">Balance: $0.00</p>
+            <p className="text-xs text-muted-foreground">Balance: ${user.balance.toFixed(2)}</p>
           </div>
         </DropdownMenuLabel>
 
