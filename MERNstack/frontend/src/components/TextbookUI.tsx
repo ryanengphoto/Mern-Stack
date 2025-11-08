@@ -40,7 +40,7 @@ function TextbookUI()
             
             if( res.error.length > 0 )
             {
-                setMessage( "API Error:" + res.error );
+                setMessage( "API Error: " + res.error );
             }
             else
             {
