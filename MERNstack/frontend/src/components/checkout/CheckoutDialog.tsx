@@ -18,7 +18,7 @@ interface CheckoutDialogProps {
 type CheckoutStep = "shipping" | "payment" | "confirmation";
 
 export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
   const [step, setStep] = useState<CheckoutStep>("shipping");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -49,19 +49,38 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast.error("You must be logged in to purchase");
+      return;
+    }
+
+    // Check if user has sufficient balance
+    const userBalance = user.balance || 0;
+    if (userBalance < totalPrice) {
+      toast.error(`Insufficient balance. You need $${totalPrice.toFixed(2)} but only have $${userBalance.toFixed(2)}`);
+      return;
+    }
+
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Deduct balance
+      const newBalance = userBalance - totalPrice;
+      await updateUser({ balance: newBalance });
 
-    // Generate mock order ID
-    const mockOrderId = `ORD-${Date.now()}`;
-    setOrderId(mockOrderId);
-    
-    setIsProcessing(false);
-    setStep("confirmation");
-    clearCart();
-    toast.success("Order placed successfully!");
+      // Generate order ID
+      const mockOrderId = `ORD-${Date.now()}`;
+      setOrderId(mockOrderId);
+
+      setIsProcessing(false);
+      setStep("confirmation");
+      clearCart();
+      toast.success("Order placed successfully!");
+    } catch (error) {
+      setIsProcessing(false);
+      toast.error("Failed to process payment. Please try again.");
+    }
   };
 
   const handleClose = () => {
@@ -208,17 +227,12 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
           <form onSubmit={handlePaymentSubmit} className="space-y-4">
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <div className="flex items-center justify-between">
-                <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Shipping</span>
-                <span>$5.00</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
                 <span>Total</span>
-                <span className="text-primary">${(totalPrice + 5).toFixed(2)}</span>
+                <span className="text-primary">${totalPrice.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Your Balance</span>
+                <span>${(user?.balance || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -317,7 +331,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
                 <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-muted-foreground">Total Paid</p>
-                  <p className="text-primary">${(totalPrice + 5).toFixed(2)}</p>
+                  <p className="text-primary">${totalPrice.toFixed(2)}</p>
                 </div>
               </div>
             </div>
