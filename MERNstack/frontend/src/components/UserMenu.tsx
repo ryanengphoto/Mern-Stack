@@ -9,9 +9,11 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { useAuth } from "../lib/auth-context";
+import { useNavigate } from "react-router-dom";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!user || !user.name) return null;
 
@@ -22,6 +24,11 @@ export function UserMenu() {
     .toUpperCase()
     .slice(0, 2);
 
+  // navigate to settings page
+  function goToSettings() {
+    navigate("/settings");
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -31,15 +38,29 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">Balance: $0.00</p>
+            <p className="text-xs text-muted-foreground">Balance: ${user.balance.toFixed(2)}</p>
           </div>
         </DropdownMenuLabel>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout} className="cursor-pointer">
+
+        {/* new Settings option */}
+        <DropdownMenuItem
+          onClick={goToSettings}
+          className="cursor-pointer"
+        >
+          Settings
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={logout}
+          className="cursor-pointer"
+        >
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
