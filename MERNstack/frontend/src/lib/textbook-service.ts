@@ -12,6 +12,7 @@ export interface Textbook {
   description?: string;
   images?: string[];
   seller: string; // User ID
+  buyer?: string | null; // User ID of buyer, null if unsold
   createdAt: Date;
 }
 
@@ -88,7 +89,7 @@ export const textbookService = {
     }
   },
 
-  // Search all textbooks
+  // Search all textbooks (unsold only)
   async searchTextbooks(query: string): Promise<Textbook[]> {
     const response = await fetch(`${API_URL}/search`, {
       method: "POST",
@@ -101,10 +102,11 @@ export const textbookService = {
     }
 
     const data = await response.json();
-    return data.results;
+    // Filter out sold textbooks
+    return data.results.filter((t: Textbook) => !t.buyer);
   },
 
-  // Get all textbooks
+  // Get all textbooks (unsold only)
   async getAllTextbooks(): Promise<Textbook[]> {
     const response = await fetch(`${API_URL}/all`, {
       method: "POST",
@@ -116,6 +118,7 @@ export const textbookService = {
     }
 
     const data = await response.json();
-    return data.textbooks;
+    // Filter out sold textbooks
+    return data.textbooks.filter((t: Textbook) => !t.buyer);
   },
 };
