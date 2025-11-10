@@ -145,7 +145,8 @@ router.post('/login', async (req, res) => {
       email: user.email,
       phone: user.phone,
       address: user.address,
-      verified: user.verified
+      verified: user.verified,
+      balance: user.balance
     };
 
     res.json({ token, user: userResponse });
