@@ -15,7 +15,8 @@ const textbookSchema = new mongoose.Schema({
       'Engineering',
       'Business',
       'Literature',
-      'Language'
+      'Language',
+      'Uncategorized'
     ], default: 'Uncategorized' },
   images: [String], // array of image URLs
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
