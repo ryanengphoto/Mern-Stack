@@ -56,7 +56,7 @@ export const authService = {
   },
 
   async resetPassword(email: string): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/auth/reset-password`, {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -68,6 +68,27 @@ export const authService = {
     }
 
     return response.json();
+  },
+
+  async submitResetPassword(token: string, password: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/reset-password/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    let data: any = {};
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || "Password reset failed");
+    }
+
+    return data; // { message: 'Password successfully reset.' }
   },
 
   async updateUser(updatedUser: Partial<User>): Promise<User> {
@@ -142,4 +163,5 @@ export const authService = {
   storeToken(token: string): void {
     localStorage.setItem("auth_token", token);
   },
+
 };
