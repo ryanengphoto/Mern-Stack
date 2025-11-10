@@ -198,8 +198,8 @@ router.post('/reset-password/:token', async (req, res) => {
     const user = await User.findById(resetToken.userId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
 
-    user.password = await bcrypt.hash(password, 10);
-    await user.save();
+    user.password = password; // <--- just assign plain password
+    await user.save();        // pre-save hook hashes it automatically
     await PasswordResetToken.deleteOne({ _id: resetToken._id });
 
     res.json({ message: 'Password successfully reset.' });
