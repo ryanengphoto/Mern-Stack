@@ -32,6 +32,11 @@ export function ResetPasswordPage() {
     e.preventDefault();
     if (password !== confirm) return toast.error("Passwords do not match");
 
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Call authService via context
