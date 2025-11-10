@@ -118,7 +118,7 @@ export function YourListings() {
                 {textbook.author && (
                   <p className="text-sm text-muted-foreground">{textbook.author}</p>
                 )}
-                <p className="text-lg font-bold">${textbook.price}</p>
+                <p className="text-lg font-bold">${textbook.price.toFixed(2)}</p>
                 <p className="text-sm text-muted-foreground">
                   Condition: {textbook.condition}
                 </p>
