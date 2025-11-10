@@ -39,7 +39,7 @@ router.post('/by-user', async (req, res) => {
  */
 router.post('/add', auth, async (req, res) => {
   try {
-    const { title, author, isbn, price, condition, description, images } = req.body;
+    const { title, author, isbn, price, condition, description, images, category } = req.body;
 
     const textbook = new Textbook({
       title,
@@ -49,7 +49,8 @@ router.post('/add', auth, async (req, res) => {
       condition,
       description,
       images,
-      seller: req.user._id   // <- automatically tied to logged-in user
+      category,           // <-- added category here
+      seller: req.user._id
     });
 
     await textbook.save();
@@ -64,25 +65,27 @@ router.post('/add', auth, async (req, res) => {
  * @route POST /api/textbooks/search
  * @body { search: string }
  */
-router.post('/search', async (req, res) =>
-{
-  try 
-  {
-    const {search} = req.body;
-
-    //clean search
+router.post('/search', async (req, res) => {
+  try {
+    const { search } = req.body;
     const searchTrimmed = search.trim();
 
-    //get textbooks matching search
-    const matchedTextbooks = await Textbook.find({title: {$regex: searchTrimmed, $options: 'i'}});
-    const result = matchedTextbooks.map(t => ({id: t._id, title: t.title, author: t.author, price: t.price, isbn: t.isbn, seller: t.seller, buyer: t.buyer}));
+    const matchedTextbooks = await Textbook.find({ title: { $regex: searchTrimmed, $options: 'i' } });
+    const result = matchedTextbooks.map(t => ({
+      id: t._id,
+      title: t.title,
+      author: t.author,
+      price: t.price,
+      isbn: t.isbn,
+      seller: t.seller,
+      buyer: t.buyer,
+      category: t.category  // <-- include category in search results
+    }));
 
-    res.status(200).json({results: result, error: ''});
-  }
-  catch (e)
-  {
+    res.status(200).json({ results: result, error: '' });
+  } catch (e) {
     console.error(e);
-    res.status(500).json({error: e.toString()});
+    res.status(500).json({ error: e.toString() });
   }
 });
 
@@ -120,23 +123,20 @@ router.post('/purchase', auth, async (req, res) => {
     const buyerId = req.user._id;
 
     const textbookToBuy = await Textbook.findById(id).populate('seller', 'name email phone');
-    
-    if (!textbookToBuy) return res.status(404).json({error: "No textbook found"});
-    
+    if (!textbookToBuy) return res.status(404).json({ error: "No textbook found" });
+
     const buyer = await User.findById(buyerId);
     const seller = await User.findById(textbookToBuy.seller._id);
 
-    if (textbookToBuy.price > buyer.balance) return res.status(400).json({error: "User doesn't have enough money"});
+    if (textbookToBuy.price > buyer.balance) return res.status(400).json({ error: "User doesn't have enough money" });
 
-    if (textbookToBuy.seller._id.toString() === buyerId.toString())
-    {
-      return res.status(400).json({error: "This is your own textbook"});
+    if (textbookToBuy.seller._id.toString() === buyerId.toString()) {
+      return res.status(400).json({ error: "This is your own textbook" });
     }
 
-    textbookToBuy.buyer = buyerId
+    textbookToBuy.buyer = buyerId;
     await textbookToBuy.save();
 
-    //update balances
     buyer.balance -= textbookToBuy.price;
     await buyer.save();
     seller.balance += textbookToBuy.price;

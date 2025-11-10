@@ -11,6 +11,15 @@ export interface Textbook {
   condition: "new" | "like new" | "used" | "very used";
   description?: string;
   images?: string[];
+  category?: 
+    | "Math"
+    | "Science"
+    | "Computer Science"
+    | "Engineering"
+    | "Business"
+    | "Literature"
+    | "Language"
+    | "Uncategorized";
   seller: string; // User ID
   buyer?: string | null; // User ID of buyer, null if unsold
   createdAt: Date;
@@ -24,6 +33,15 @@ export interface CreateTextbookData {
   condition: "new" | "like new" | "used" | "very used";
   description?: string;
   images?: string[];
+  category?: 
+    | "Math"
+    | "Science"
+    | "Computer Science"
+    | "Engineering"
+    | "Business"
+    | "Literature"
+    | "Language"
+    | "Uncategorized";
 }
 
 export const textbookService = {
