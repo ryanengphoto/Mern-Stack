@@ -14,6 +14,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<{ message: string }>;
+  submitResetPassword: (token: string, password: string) => Promise<{ message: string }>;
   updateUser: (updatedUser: Partial<User>) => void;
 }
 
@@ -64,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authService.resetPassword(email);
   };
 
+  const submitResetPassword = async (token: string, password: string) => {
+    return authService.submitResetPassword(token, password);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -73,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         resetPassword,
+        submitResetPassword,
         updateUser,
       }}
     >
