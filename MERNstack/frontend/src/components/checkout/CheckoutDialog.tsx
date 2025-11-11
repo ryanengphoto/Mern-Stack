@@ -6,7 +6,6 @@ import { useCart } from "../../lib/cart-context";
 import { useAuth } from "../../lib/auth-context";
 import { toast } from "sonner@2.0.3";
 import { CheckCircle2, Wallet, ShoppingCart } from "lucide-react";
-import { fetchWithAuth } from "../../lib/api";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -43,22 +42,9 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       setPurchasedItems([...items]);
       setPaidAmount(totalPrice);
 
-      // Purchase each textbook through the backend
-      // The backend will handle balance deduction and marking as sold
-      for (const item of items) {
-        const response = await fetchWithAuth("https://lamp-stack4331.xyz/api/textbooks/purchase", {
-          method: "POST",
-          body: JSON.stringify({ id: item.product.id }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to purchase textbook");
-        }
-      }
-
-      // Refresh user data to get updated balance
-      await updateUser({});
+      // Deduct balance
+      const newBalance = userBalance - totalPrice;
+      await updateUser({ balance: newBalance });
 
       setIsProcessing(false);
       setStep("success");
@@ -66,7 +52,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
       toast.success("Order placed successfully!");
     } catch (error) {
       setIsProcessing(false);
-      toast.error(error instanceof Error ? error.message : "Failed to process payment. Please try again.");
+      toast.error("Failed to process payment. Please try again.");
     }
   };
 
