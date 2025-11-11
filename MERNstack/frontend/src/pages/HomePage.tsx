@@ -142,7 +142,9 @@ export function HomePage({ searchQuery }: HomePageProps) {
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              No textbooks found matching your search.
+              {searchQuery 
+                ? "No textbooks found matching your search."
+                : "No textbooks are currently available for purchase. Check back later!"}
             </p>
           </div>
         )}
