@@ -23,7 +23,7 @@ export function YourListings() {
   }, []);
 
   const loadTextbooks = async () => {
-    if (!user?._id) return; // Don't load if not logged in
+    if (!user?._id) return;
     try {
       setIsLoading(true);
       const data = await textbookService.getMyTextbooks(user._id);
@@ -43,7 +43,6 @@ export function YourListings() {
 
   const handleDeleteConfirm = async () => {
     if (!textbookToDelete) return;
-
     try {
       await textbookService.deleteTextbook(textbookToDelete._id);
       setTextbooks(textbooks.filter((t) => t._id !== textbookToDelete._id));
@@ -68,8 +67,11 @@ export function YourListings() {
     );
   }
 
+  const activeTextbooks = textbooks.filter((t) => !t.buyer);
+  const soldTextbooks = textbooks.filter((t) => t.buyer);
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 space-y-20">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Your Listings</h1>
@@ -83,68 +85,127 @@ export function YourListings() {
         </Button>
       </div>
 
-      {textbooks.length === 0 ? (
-        <div className="text-center py-12 bg-muted rounded-lg">
-          <p className="text-muted-foreground mb-4">
-            You haven't listed any textbooks yet
-          </p>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            List Your First Textbook
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {textbooks.map((textbook) => (
-            <div
-              key={textbook._id}
-              className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className="aspect-[3/4] bg-muted relative overflow-hidden">
-                {textbook.images && textbook.images.length > 0 ? (
-                  <img
-                    src={textbook.images[0]}
-                    alt={textbook.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    No Image
+      {/* Active Listings */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Active Listings</h2>
+        {activeTextbooks.length === 0 ? (
+          <div className="text-center py-12 bg-muted rounded-lg">
+            <p className="text-muted-foreground mb-4">
+              You have no active listings
+            </p>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              List Your First Textbook
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {activeTextbooks.map((textbook) => (
+              <div
+                key={textbook._id}
+                className="border rounded-lg overflow-hidden transition-shadow hover:shadow-lg relative"
+              >
+                <div className="aspect-[3/4] bg-muted relative overflow-hidden">
+                  {textbook.images && textbook.images.length > 0 ? (
+                    <img
+                      src={textbook.images[0]}
+                      alt={textbook.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold line-clamp-2">{textbook.title}</h3>
+                  {textbook.author && (
+                    <p className="text-sm text-muted-foreground">{textbook.author}</p>
+                  )}
+                  <p className="text-lg font-bold">${textbook.price.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Condition: {textbook.condition}
+                  </p>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(textbook)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleDeleteClick(textbook)}
+                    >
+                      Delete
+                    </Button>
                   </div>
-                )}
-              </div>
-              <div className="p-4 space-y-2">
-                <h3 className="font-semibold line-clamp-2">{textbook.title}</h3>
-                {textbook.author && (
-                  <p className="text-sm text-muted-foreground">{textbook.author}</p>
-                )}
-                <p className="text-lg font-bold">${textbook.price.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">
-                  Condition: {textbook.condition}
-                </p>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(textbook)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleDeleteClick(textbook)}
-                  >
-                    Delete
-                  </Button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Sold Listings */}
+      <section className="mt-16">
+        <h2 className="text-2xl font-semibold mb-4">Sold Listings</h2>
+        {soldTextbooks.length === 0 ? (
+          <div className="text-center py-12 bg-muted rounded-lg">
+            <p className="text-muted-foreground">
+              You haven’t sold any textbooks yet
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {soldTextbooks.map((textbook) => (
+              <div
+                key={textbook._id}
+                className="border rounded-lg overflow-hidden relative opacity-50 grayscale"
+              >
+                <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 text-xs font-bold rounded">
+                  SOLD
+                </div>
+
+                <div className="aspect-[3/4] bg-muted relative overflow-hidden">
+                  {textbook.images && textbook.images.length > 0 ? (
+                    <img
+                      src={textbook.images[0]}
+                      alt={textbook.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold line-clamp-2">{textbook.title}</h3>
+                  {textbook.author && (
+                    <p className="text-sm text-muted-foreground">{textbook.author}</p>
+                  )}
+                  <p className="text-lg font-bold">${textbook.price.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Condition: {textbook.condition}
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    Purchased by another user
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <AddTextbookDialog
         open={isAddDialogOpen}
