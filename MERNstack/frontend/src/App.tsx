@@ -10,6 +10,7 @@ import { CheckoutDialog } from "./components/checkout/CheckoutDialog";
 import { HomePage } from "./pages/HomePage";
 import { YourListings } from "./pages/YourListings";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 
 function AppContent() {
   const { isLoading } = useAuth();
@@ -43,7 +44,8 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
         <Route path="/listings" element={<YourListings />} />
-         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/reset-password/:token?" element={<ResetPasswordPage />} />
       </Routes>
 
       {/* Cart and Checkout available on all pages */}

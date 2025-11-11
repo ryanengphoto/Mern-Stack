@@ -14,6 +14,7 @@ export interface Product {
   location: string;
   description?: string;
   isbn: string;
+  category: string;
 }
 
 interface ProductCardProps {
