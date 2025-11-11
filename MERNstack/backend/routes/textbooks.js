@@ -118,9 +118,6 @@ router.post('/update', auth, async (req, res) => {
  * @body { id: string }
  */
 router.post('/purchase', auth, async (req, res) => {
-  const sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
   try {
     const { id } = req.body;
     const buyerId = req.user._id;
@@ -131,65 +128,22 @@ router.post('/purchase', auth, async (req, res) => {
     const buyer = await User.findById(buyerId);
     const seller = await User.findById(textbookToBuy.seller._id);
 
-    if (textbookToBuy.price > buyer.balance)
-      return res.status(400).json({ error: "User doesn't have enough money" });
+    if (textbookToBuy.price > buyer.balance) return res.status(400).json({ error: "User doesn't have enough money" });
 
     if (textbookToBuy.seller._id.toString() === buyerId.toString()) {
       return res.status(400).json({ error: "This is your own textbook" });
     }
 
-    // --- Transaction Logic ---
     textbookToBuy.buyer = buyerId;
     await textbookToBuy.save();
 
     buyer.balance -= textbookToBuy.price;
     await buyer.save();
-
     seller.balance += textbookToBuy.price;
     await seller.save();
 
-    // --- Email Confirmation ---
-    const buyerMsg = {
-      to: buyer.email,
-      from: 'no-reply@lamp-stack4331.xyz',
-      subject: `Purchase Confirmation: ${textbookToBuy.title}`,
-      html: `
-        <h2>Purchase Successful!</h2>
-        <p>Hey ${buyer.name || "there"},</p>
-        <p>You just bought <strong>${textbookToBuy.title}</strong> from ${seller.name} for $${textbookToBuy.price}.</p>
-        <p>Seller Contact:</p>
-        <ul>
-          <li>Email: ${seller.email}</li>
-          ${seller.phone ? `<li>Phone: ${seller.phone}</li>` : ""}
-        </ul>
-        <p>Thank you for using <strong>Papyrus</strong>!</p>
-      `
-    };
-
-    const sellerMsg = {
-      to: seller.email,
-      from: 'no-reply@lamp-stack4331.xyz',
-      subject: `Your Textbook Was Sold: ${textbookToBuy.title}`,
-      html: `
-        <h2>Good news, ${seller.name || "Seller"}!</h2>
-        <p>Your textbook <strong>${textbookToBuy.title}</strong> has been purchased by ${buyer.name} for $${textbookToBuy.price}.</p>
-        <p>Buyer Contact:</p>
-        <ul>
-          <li>Email: ${buyer.email}</li>
-          ${buyer.phone ? `<li>Phone: ${buyer.phone}</li>` : ""}
-        </ul>
-        <p>Your balance has been updated. You can check your account on Papyrus for details.</p>
-      `
-    };
-
-    await Promise.all([
-      sgMail.send(buyerMsg),
-      sgMail.send(sellerMsg)
-    ]);
-
-    res.status(200).json({ message: 'Textbook purchased successfully and confirmation emails sent.' });
+    res.status(200).json({ message: 'Textbook purchased successfully' });
   } catch (err) {
-    console.error('Purchase error:', err);
     res.status(400).json({ error: err.message });
   }
 });
