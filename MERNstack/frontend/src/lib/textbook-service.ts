@@ -12,7 +12,6 @@ export interface Textbook {
   description?: string;
   images?: string[];
   seller: string; // User ID
-  buyer?: string | null; // User ID of buyer, null if not purchased
   createdAt: Date;
 }
 
@@ -36,21 +35,6 @@ export const textbookService = {
 
     if (!response.ok) {
       throw new Error("Failed to fetch textbooks");
-    }
-
-    const data = await response.json();
-    return data.textbooks;
-  },
-
-  // Get textbooks purchased by current user
-  async getMyPurchasedTextbooks(userId: string): Promise<Textbook[]> {
-    const response = await fetchWithAuth(`${API_URL}/purchased`, {
-      method: "POST",
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch purchased textbooks");
     }
 
     const data = await response.json();
@@ -120,7 +104,7 @@ export const textbookService = {
     return data.results;
   },
 
-  // Get all available (unsold) textbooks
+  // Get all textbooks
   async getAllTextbooks(): Promise<Textbook[]> {
     const response = await fetch(`${API_URL}/all`, {
       method: "POST",
@@ -132,7 +116,6 @@ export const textbookService = {
     }
 
     const data = await response.json();
-    // Filter out textbooks that have been purchased (have a buyer)
-    return data.textbooks.filter((textbook: Textbook) => !textbook.buyer);
+    return data.textbooks;
   },
 };
