@@ -26,7 +26,25 @@ router.post('/all', async (req, res) => {
 router.post('/by-user', async (req, res) => {
   try {
     const { userId } = req.body;
-    const textbooks = await Textbook.find({ seller: userId });
+    const textbooks = await Textbook.find({ 
+      seller: userId,
+      buyer: null  // Only return textbooks that haven't been purchased
+    });
+    res.status(200).json({ textbooks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @desc Get textbooks purchased by a specific user
+ * @route POST /api/textbooks/purchased
+ * @body { userId: string }
+ */
+router.post('/purchased', auth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const textbooks = await Textbook.find({ buyer: userId }).populate('seller', 'name email phone');
     res.status(200).json({ textbooks });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -126,12 +144,12 @@ router.post('/purchase', auth, async (req, res) => {
     const buyer = await User.findById(buyerId);
     const seller = await User.findById(textbookToBuy.seller._id);
 
-    if (textbookToBuy.price > buyer.balance) return res.status(400).json({error: "User doesn't have enough money"});
-
     if (textbookToBuy.seller._id.toString() === buyerId.toString())
     {
       return res.status(400).json({error: "This is your own textbook"});
     }
+
+    if (textbookToBuy.price > buyer.balance) return res.status(400).json({error: "User doesn't have enough money"});
 
     textbookToBuy.buyer = buyerId
     await textbookToBuy.save();
