@@ -1,20 +1,14 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, it, beforeEach, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { HomePage } from "../pages/HomePage";
-import { textbookService } from "../lib/textbook-service";
-import { toast } from "sonner";
+import { vi } from "vitest";
 
-// --- MOCK SERVICES ---
-vi.mock("../lib/textbook-service", () => ({
-  textbookService: { getAllTextbooks: vi.fn() },
+// Mock ProductDetail component (to avoid modal rendering issues)
+vi.mock("../components/ProductDetail", () => ({
+  ProductDetail: ({ product }: any) => <div data-testid="product-detail">{product?.title}</div>,
 }));
 
-vi.mock("sonner", () => ({
-  toast: { error: vi.fn() },
-}));
-
-// --- MOCK COMPONENTS ---
+// Mock ProductCard component
 vi.mock("../components/ProductCard", () => ({
   ProductCard: ({ product, onClick }: any) => (
     <div data-testid="product-card" onClick={onClick}>
@@ -23,69 +17,105 @@ vi.mock("../components/ProductCard", () => ({
   ),
 }));
 
-vi.mock("../components/ProductDetail", () => ({
-  ProductDetail: ({ product, open }: any) =>
-    open ? <div data-testid="product-detail">{product?.title}</div> : null,
+// Mock textbookService
+vi.mock("../lib/textbook-service", () => ({
+  textbookService: {
+    getAllTextbooks: vi.fn(),
+  },
 }));
 
-describe("HomePage", () => {
-  const mockData = [
-    { _id: "1", title: "Calculus 101", author: "Stewart", price: 50, condition: "new" },
-    { _id: "2", title: "Physics Fundamentals", author: "Halliday", price: 60, condition: "used" },
-    { _id: "3", title: "Biology Basics", author: "Campbell", price: 45, condition: "like new" },
-  ];
+import { textbookService } from "../lib/textbook-service";
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+describe("HomePage", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("renders textbooks from API", async () => {
-    (textbookService.getAllTextbooks as any).mockResolvedValueOnce(mockData);
+  it("renders welcome text when no search query", () => {
+    render(<HomePage searchQuery="" />);
+    expect(screen.getByText(/Find Your Textbooks at Student Prices/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Buy and sell college textbooks directly/i)
+    ).toBeInTheDocument();
+  });
+
+  it("loads and displays textbooks from API", async () => {
+    (textbookService.getAllTextbooks as any).mockResolvedValueOnce([
+      { _id: "1", title: "Math 101", author: "Alice", price: 10, condition: "new", category: "Math" },
+      { _id: "2", title: "Physics 101", author: "Bob", price: 15, condition: "used", category: "Science" },
+    ]);
 
     render(<HomePage searchQuery="" />);
 
-    // Wait for textbooks to appear
     await waitFor(() => {
-      mockData.forEach((book) => {
-        expect(screen.getByText(book.title)).toBeInTheDocument();
-      });
+      expect(screen.getByText(/Math 101/i)).toBeInTheDocument();
+      expect(screen.getByText(/Physics 101/i)).toBeInTheDocument();
+    });
+  });
+
+  it("filters textbooks by category", async () => {
+    (textbookService.getAllTextbooks as any).mockResolvedValueOnce([
+      { _id: "1", title: "Math 101", author: "Alice", price: 10, condition: "new", category: "Math" },
+      { _id: "2", title: "Physics 101", author: "Bob", price: 15, condition: "used", category: "Science" },
+    ]);
+
+    render(<HomePage searchQuery="" />);
+    await waitFor(() => screen.getByText(/Math 101/i));
+
+    fireEvent.click(screen.getByText("Math"));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Math 101/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Physics 101/i)).not.toBeInTheDocument();
     });
   });
 
   it("filters textbooks by search query", async () => {
-    (textbookService.getAllTextbooks as any).mockResolvedValueOnce(mockData);
+    (textbookService.getAllTextbooks as any).mockResolvedValueOnce([
+      { _id: "1", title: "Math 101", author: "Alice", price: 10, condition: "new", category: "Math" },
+      { _id: "2", title: "Physics 101", author: "Bob", price: 15, condition: "used", category: "Science" },
+    ]);
 
-    render(<HomePage searchQuery="physics" />);
+    render(<HomePage searchQuery="Physics" />);
 
     await waitFor(() => {
-      expect(screen.getByText("Physics Fundamentals")).toBeInTheDocument();
-      expect(screen.queryByText("Calculus 101")).not.toBeInTheDocument();
-      expect(screen.queryByText("Biology Basics")).not.toBeInTheDocument();
+      expect(screen.getByText(/Physics 101/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Math 101/i)).not.toBeInTheDocument();
     });
   });
 
-  it("handles API errors", async () => {
-    (textbookService.getAllTextbooks as any).mockRejectedValueOnce(new Error("API failed"));
+  it("opens product detail modal when product clicked", async () => {
+    (textbookService.getAllTextbooks as any).mockResolvedValueOnce([
+      { _id: "1", title: "Math 101", author: "Alice", price: 10, condition: "new", category: "Math" },
+    ]);
+
+    render(<HomePage searchQuery="" />);
+    await waitFor(() => screen.getByText(/Math 101/i));
+
+    fireEvent.click(screen.getByText(/Math 101/i));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("product-detail")).toHaveTextContent("Math 101");
+    });
+  });
+
+  it("displays empty state when no textbooks found", async () => {
+    (textbookService.getAllTextbooks as any).mockResolvedValueOnce([]);
+
+    render(<HomePage searchQuery="Nonexistent" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No textbooks found/i)).toBeInTheDocument();
+    });
+  });
+
+  it("handles API error gracefully", async () => {
+    (textbookService.getAllTextbooks as any).mockRejectedValueOnce(new Error("Failed"));
 
     render(<HomePage searchQuery="" />);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to load textbooks");
-    });
-  });
-
-  it("opens product detail when clicking a product", async () => {
-    (textbookService.getAllTextbooks as any).mockResolvedValueOnce(mockData);
-
-    render(<HomePage searchQuery="" />);
-
-    await waitFor(() => screen.getByText("Calculus 101"));
-
-    fireEvent.click(screen.getByText("Calculus 101"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("product-detail")).toBeInTheDocument();
-      expect(screen.getByTestId("product-detail")).toHaveTextContent("Calculus 101");
+      expect(screen.getByText(/Failed to load textbooks/i)).toBeInTheDocument();
     });
   });
 });
