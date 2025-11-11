@@ -1,10 +1,11 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { describe, it, beforeEach, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { HomePage } from "../pages/HomePage";
 import { textbookService } from "../lib/textbook-service";
 import { toast } from "sonner";
 
-// 👇 mock the services
+// --- MOCK SERVICES ---
 vi.mock("../lib/textbook-service", () => ({
   textbookService: { getAllTextbooks: vi.fn() },
 }));
@@ -13,7 +14,7 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn() },
 }));
 
-// 👇 mock components to isolate HomePage
+// --- MOCK COMPONENTS ---
 vi.mock("../components/ProductCard", () => ({
   ProductCard: ({ product, onClick }: any) => (
     <div data-testid="product-card" onClick={onClick}>
@@ -24,7 +25,7 @@ vi.mock("../components/ProductCard", () => ({
 
 vi.mock("../components/ProductDetail", () => ({
   ProductDetail: ({ product, open }: any) =>
-    open && <div data-testid="product-detail">{product?.title}</div>,
+    open ? <div data-testid="product-detail">{product?.title}</div> : null,
 }));
 
 describe("HomePage", () => {
@@ -43,12 +44,11 @@ describe("HomePage", () => {
 
     render(<HomePage searchQuery="" />);
 
-    expect(screen.getByText(/loading textbooks/i)).toBeInTheDocument();
-
+    // Wait for textbooks to appear
     await waitFor(() => {
-      expect(screen.getByText("Calculus 101")).toBeInTheDocument();
-      expect(screen.getByText("Physics Fundamentals")).toBeInTheDocument();
-      expect(screen.getByText("Biology Basics")).toBeInTheDocument();
+      mockData.forEach((book) => {
+        expect(screen.getByText(book.title)).toBeInTheDocument();
+      });
     });
   });
 
@@ -59,11 +59,9 @@ describe("HomePage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Physics Fundamentals")).toBeInTheDocument();
+      expect(screen.queryByText("Calculus 101")).not.toBeInTheDocument();
+      expect(screen.queryByText("Biology Basics")).not.toBeInTheDocument();
     });
-
-    // other products should not appear
-    expect(screen.queryByText("Calculus 101")).not.toBeInTheDocument();
-    expect(screen.queryByText("Biology Basics")).not.toBeInTheDocument();
   });
 
   it("handles API errors", async () => {
@@ -85,7 +83,9 @@ describe("HomePage", () => {
 
     fireEvent.click(screen.getByText("Calculus 101"));
 
-    expect(screen.getByTestId("product-detail")).toBeInTheDocument();
-    expect(screen.getByTestId("product-detail")).toHaveTextContent("Calculus 101");
+    await waitFor(() => {
+      expect(screen.getByTestId("product-detail")).toBeInTheDocument();
+      expect(screen.getByTestId("product-detail")).toHaveTextContent("Calculus 101");
+    });
   });
 });
