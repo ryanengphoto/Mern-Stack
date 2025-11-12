@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../services/textbook_service.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,12 +15,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextbookService _textbookService = TextbookService();
   final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _addressCtrl = TextEditingController();
 
   List<Textbook> _textbooks = [];
   bool _loading = true;
   String _error = '';
-  String _selectedCategory = 'All';
 
+  final Set<String> _cart = {};
+  bool _checkingOut = false;
+
+  String _selectedCategory = 'All';
   final List<String> _categories = const [
     'All',
     'Math',
@@ -86,15 +91,171 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _handleAddFunds() async {
+    if (AuthService.authToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to add demo funds')),
+      );
+      return;
+    }
+
+    final authService = AuthService();
+    final res = await authService.addDemoFunds();
+
+    if (res['success'] == true) {
+      final balance = res['balance'];
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            balance != null
+                ? 'Demo funds added. New balance: \$${balance.toStringAsFixed(2)}'
+                : 'Added \$100 demo funds',
+          ),
+        ),
+      );
+      setState(() {}); // refresh balance
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['message'] ?? 'Failed to add funds'),
+        ),
+      );
+    }
+  }
+
+  void _openCartDialog() {
+    if (_cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your cart is empty')),
+      );
+      return;
+    }
+
+    final cartBooks =
+        _textbooks.where((b) => _cart.contains(b.id)).toList();
+    final total =
+        cartBooks.fold<double>(0, (sum, b) => sum + b.price);
+
+    _addressCtrl.text = _addressCtrl.text; // keep whatever user typed
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cart / Checkout'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Items: ${_cart.length}'),
+              const SizedBox(height: 4),
+              Text('Total: \$${total.toStringAsFixed(2)}'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _addressCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Shipping address',
+                  hintText: '123 University Ave, Dorm #123',
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 8),
+              if (_checkingOut)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: LinearProgressIndicator(),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed:
+                  _checkingOut ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: _checkingOut
+                  ? null
+                  : () async {
+                      await _handleCheckout();
+                    },
+              child: const Text('Checkout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleCheckout() async {
+    if (AuthService.authToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to checkout')),
+      );
+      return;
+    }
+
+    final address = _addressCtrl.text.trim();
+    if (address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a shipping address'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop(); // close dialog
+    setState(() {
+      _checkingOut = true;
+    });
+
+    try {
+      final idsToBuy = List<String>.from(_cart);
+      for (final id in idsToBuy) {
+        final res =
+            await _textbookService.purchaseTextbook(id, address);
+
+        if (res['success'] != true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                res['message'] ??
+                    'Failed to purchase one or more items',
+              ),
+            ),
+          );
+          break;
+        } else {
+          _cart.remove(id);
+        }
+      }
+
+      await _loadTextbooks();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Order placed! Shipping to: $address')),
+      );
+
+      _addressCtrl.clear();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _checkingOut = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _addressCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final baseBg = const Color(0xFFF0E6D9); // beige background
+    final baseBg = const Color(0xFFF0E6D9); // beige-ish
 
     return Scaffold(
       backgroundColor: baseBg,
@@ -111,7 +272,6 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 16),
-            // Search box
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
@@ -119,7 +279,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search for textbooks...',
                   prefixIcon: const Icon(Icons.search),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
@@ -132,29 +293,93 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Cart',
-            onPressed: () {
-              // TODO: Cart screen
-            },
-            icon: const Icon(Icons.shopping_cart_outlined),
+          // Show current balance
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Center(
+              child: Builder(
+                builder: (context) {
+                  double balance = 0.0;
+                  if (AuthService.currentUser != null) {
+                    final raw = AuthService.currentUser!['balance'];
+                    if (raw is num) {
+                      balance = raw.toDouble();
+                    }
+                  }
+                  return Text(
+                    '\$${balance.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
+
+          // Add $100 demo funds
+          IconButton(
+            tooltip: 'Add \$100 demo funds',
+            onPressed: _handleAddFunds,
+            icon: const Icon(Icons.attach_money),
+          ),
+
+          // Cart with badge
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              IconButton(
+                tooltip: 'Cart',
+                onPressed: _openCartDialog,
+                icon: const Icon(Icons.shopping_cart_outlined),
+              ),
+              if (_cart.isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(
+                        minWidth: 16, minHeight: 16),
+                    child: Text(
+                      _cart.length.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          // Login button
           TextButton(
             onPressed: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const LoginScreen(),
+                ),
               );
-              // After return you could refresh state if needed.
+              setState(() {}); // refresh after login
             },
             child: const Text('Sign In'),
           ),
+
           const SizedBox(width: 8),
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: FilledButton(
               onPressed: () {
-                // TODO: navigate to Sell Textbook flow
+                // TODO: Sell textbook flow
               },
               child: const Text('Sell Textbook'),
             ),
@@ -164,11 +389,12 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Categories row
+          // Categories
           SizedBox(
             height: 48,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
                 final cat = _categories[index];
@@ -180,8 +406,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() {
                       _selectedCategory = cat;
                     });
-                    // Right now this is just visual; you can hook
-                    // this up to category-based filtering later.
                   },
                 );
               },
@@ -193,7 +417,10 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
             child: Text(
               'Find Your Textbooks at Student Prices',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Expanded(
@@ -202,7 +429,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 : _error.isNotEmpty
                     ? Center(child: Text('Error: $_error'))
                     : _textbooks.isEmpty
-                        ? const Center(child: Text('No textbooks found.'))
+                        ? const Center(
+                            child: Text('No textbooks found.'),
+                          )
                         : GridView.builder(
                             padding: const EdgeInsets.all(16),
                             gridDelegate:
@@ -210,12 +439,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
-                              childAspectRatio: 0.65,
+                              childAspectRatio: 0.70,
                             ),
                             itemCount: _textbooks.length,
                             itemBuilder: (context, index) {
                               final book = _textbooks[index];
-                              return _TextbookCard(book: book);
+                              final inCart = _cart.contains(book.id);
+                              return _TextbookCard(
+                                book: book,
+                                inCart: inCart,
+                                onToggleCart: () {
+                                  setState(() {
+                                    if (inCart) {
+                                      _cart.remove(book.id);
+                                    } else {
+                                      _cart.add(book.id);
+                                    }
+                                  });
+                                },
+                              );
                             },
                           ),
           ),
@@ -227,8 +469,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _TextbookCard extends StatelessWidget {
   final Textbook book;
+  final bool inCart;
+  final VoidCallback onToggleCart;
 
-  const _TextbookCard({required this.book});
+  const _TextbookCard({
+    required this.book,
+    required this.inCart,
+    required this.onToggleCart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,24 +486,41 @@ class _TextbookCard extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // TODO: Navigate to book details page
-        },
+        onTap: () {},
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image placeholder
             Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE1D8CA),
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
-                child: const Center(
-                  child: Icon(Icons.image_outlined, size: 40),
-                ),
+                child: book.images.isNotEmpty
+                    ? Image.network(
+                        book.images[0],
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFFE1D8CA),
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: const Color(0xFFE1D8CA),
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 40,
+                          ),
+                        ),
+                      ),
               ),
             ),
             Padding(
@@ -296,6 +561,16 @@ class _TextbookCard extends StatelessWidget {
                     book.condition[0].toUpperCase() +
                         book.condition.substring(1),
                     style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: onToggleCart,
+                      child: Text(
+                        inCart ? 'Remove from cart' : 'Add to cart',
+                      ),
+                    ),
                   ),
                 ],
               ),

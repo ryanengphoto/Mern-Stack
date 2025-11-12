@@ -5,14 +5,11 @@ import 'package:http/http.dart' as http;
 import '../api_config.dart';
 
 class AuthService {
-  /// Logs in a user using the backend /api/auth/login endpoint.
-  /// Returns:
-  /// {
-  ///   'success': bool,
-  ///   'token': String?,   // when success
-  ///   'user': Map?        // when success
-  ///   'message': String?  // when error
-  /// }
+  // Simple global store for demo purposes
+  static String? authToken;
+  static Map<String, dynamic>? currentUser;
+
+  /// Logs in using /api/auth/login and stores token + user.
   Future<Map<String, dynamic>> login(String email, String password) async {
     final uri = Uri.parse('$apiBaseUrl/api/auth/login');
 
@@ -24,6 +21,9 @@ class AuthService {
 
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
+      authToken = data['token'];
+      currentUser = data['user'];
+
       return {
         'success': true,
         'token': data['token'],
@@ -36,5 +36,59 @@ class AuthService {
         'message': data['error'] ?? 'Login failed',
       };
     }
+  }
+
+  /// Adds $100 demo funds using /api/users/addBalance, then fetches /api/users/me.
+  Future<Map<String, dynamic>> addDemoFunds() async {
+    if (authToken == null) {
+      return {
+        'success': false,
+        'message': 'You must be logged in to add funds',
+      };
+    }
+
+    // 1) Add $100
+    final addUri = Uri.parse('$apiBaseUrl/api/users/addBalance');
+    final addRes = await http.post(
+      addUri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authToken',
+      },
+    );
+
+    if (addRes.statusCode != 200) {
+      final data = jsonDecode(addRes.body);
+      return {
+        'success': false,
+        'message': data['error'] ?? 'Failed to add funds',
+      };
+    }
+
+    // 2) Fetch updated user (with new balance)
+    final meUri = Uri.parse('$apiBaseUrl/api/users/me');
+    final meRes = await http.post(
+      meUri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authToken',
+      },
+    );
+
+    if (meRes.statusCode == 200) {
+      final data = jsonDecode(meRes.body);
+      final user = data['user'] as Map<String, dynamic>;
+      currentUser = user;
+      final rawBalance = user['balance'];
+      final balance = (rawBalance is num) ? rawBalance.toDouble() : 0.0;
+
+      return {
+        'success': true,
+        'balance': balance,
+      };
+    }
+
+    // funds were added, but /me failed – still a success, just no exact balance
+    return {'success': true};
   }
 }
