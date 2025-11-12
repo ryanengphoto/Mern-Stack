@@ -123,4 +123,57 @@ class TextbookService {
       };
     }
   }
+
+  /// Create a new textbook listing for the signed-in user.
+  /// Matches backend /api/textbooks/add:
+  /// { title, author, isbn, price, condition, description, images }
+  Future<Map<String, dynamic>> addTextbook({
+    required String title,
+    required String author,
+    required String isbn,
+    required double price,
+    required String condition,
+    required String description,
+    required String imageUrl,
+  }) async {
+    if (AuthService.authToken == null) {
+      return {'success': false, 'message': 'You must be logged in to sell'};
+    }
+
+    final uri = Uri.parse('$apiBaseUrl/api/textbooks/add');
+
+    final body = {
+      'title': title,
+      'author': author,
+      'isbn': isbn,
+      'price': price,
+      'condition': condition,
+      'description': description,
+      // backend expects array of image URLs
+      'images': imageUrl.trim().isEmpty ? [] : [imageUrl.trim()],
+    };
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AuthService.authToken}',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode == 201) {
+      final data = jsonDecode(res.body);
+      return {
+        'success': true,
+        'textbook': data,
+      };
+    } else {
+      final data = jsonDecode(res.body);
+      return {
+        'success': false,
+        'message': data['error'] ?? 'Failed to create textbook',
+      };
+    }
+  }
 }

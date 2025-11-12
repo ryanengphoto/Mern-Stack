@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/textbook_service.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'sell_textbook_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   String _error = '';
 
+  // Cart: holds textbook IDs
   final Set<String> _cart = {};
   bool _checkingOut = false;
 
@@ -378,8 +380,17 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: FilledButton(
-              onPressed: () {
-                // TODO: Sell textbook flow
+              onPressed: () async {
+                final created = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SellTextbookScreen(),
+                  ),
+                );
+
+                if (created == true) {
+                  _loadTextbooks();
+                }
               },
               child: const Text('Sell Textbook'),
             ),
@@ -389,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Categories
+          // Categories row (visual only for now)
           SizedBox(
             height: 48,
             child: ListView.separated(
@@ -409,12 +420,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 );
               },
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(width: 8),
               itemCount: _categories.length,
             ),
           ),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+            padding:
+                EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
             child: Text(
               'Find Your Textbooks at Student Prices',
               style: TextStyle(
@@ -486,10 +499,13 @@ class _TextbookCard extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {},
+        onTap: () {
+          // TODO: navigate to details page if you add one
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Image
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -500,7 +516,8 @@ class _TextbookCard extends StatelessWidget {
                         book.images[0],
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorBuilder:
+                            (context, error, stackTrace) {
                           return Container(
                             color: const Color(0xFFE1D8CA),
                             child: const Center(
@@ -523,9 +540,12 @@ class _TextbookCard extends StatelessWidget {
                       ),
               ),
             ),
+            // Info + Add to cart
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 8,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
