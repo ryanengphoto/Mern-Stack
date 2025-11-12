@@ -6,10 +6,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendVerificationEmail } = require('../utils/emailService');
-const PasswordResetToken = require('../models/PasswordReset');
 const CLIENT_URL = 'https://lamp-stack4331.xyz';
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // REGISTER
 router.post('/register', async (req, res) => {
