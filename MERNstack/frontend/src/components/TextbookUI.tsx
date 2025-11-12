@@ -1,28 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import { textbookService, Textbook, CreateTextbookData } from "../lib/textbook-service";
 
-function TextbookUI()
-{
-    let _ud : any = localStorage.getItem('user_data');
-    let ud = JSON.parse( _ud );
-    let userId : string = ud.id;
-    let firstName : string = ud.firstName;
-    let lastName : string = ud.lastName;
+function TextbookUI() {
+  const _ud: any = localStorage.getItem("user_data");
+  const ud = JSON.parse(_ud || "{}");
+  const userId: string = ud.id;
 
-    const [message,setMessage] = useState('');
-    const [searchResults,setResults] = useState('');
-    const [textbookList,setTextbookList] = useState('');
-    const [search,setSearchValue] = React.useState('');
-    const [textbook,setTextbookNameValue] = React.useState('');
-    
-    function handleSearchTextChange( e: any ) : void
-    {
-        setSearchValue( e.target.value );
+  const [message, setMessage] = useState("");
+  const [searchResults, setSearchResults] = useState<Textbook[]>([]);
+  const [textbookList, setTextbookList] = useState<Textbook[]>([]);
+  const [search, setSearchValue] = useState("");
+  const [textbookTitle, setTextbookTitle] = useState("");
+  const [textbookPrice, setTextbookPrice] = useState<number>(0);
+  const [textbookCondition, setTextbookCondition] = useState<
+    "new" | "like new" | "used" | "very used"
+  >("used");
+
+  useEffect(() => {
+    fetchUnsoldTextbooks();
+  }, []);
+
+  const fetchUnsoldTextbooks = async () => {
+    try {
+      const books = await textbookService.getAllTextbooks();
+      // filter for unsold textbooks
+      const unsold = books.filter((b) => !b.buyer);
+      setTextbookList(unsold);
+    } catch (err: any) {
+      setMessage(err.toString());
     }
-
-    function handleTextbookTextChange( e: any ) : void
-    {
-        setTextbookNameValue( e.target.value );
-    }
+  };
 
     //add textbook
     async function addTextbook(e:any) : Promise<void>
@@ -89,18 +96,81 @@ function TextbookUI()
         }
     };
 
-    return (
-        <div id="textbookUIDiv">
-            <br />
-            Search: <input type="text" id="searchText" placeholder="Textbook To Search For" onChange={handleSearchTextChange}/>
-            <button type="button" id="searchTextbookButton" className="buttons" onClick={searchTextbook}> Search Textbook</button><br/>
-            <span id="textbookSearchResult">{searchResults}</span>
-            <p id="textbookList">{textbookList}</p><br /><br />
-            Add: <input type="text" id="textbookText" placeholder="Textbook To Add" onChange={handleTextbookTextChange} />
-            <button type="button" id="addTextbookButton" className="buttons" onClick={addTextbook}> Add Textbook </button><br />
-            <span id="textbookAddResult">{message}</span>
-        </div>
-    );
+    try {
+      await textbookService.addTextbook(newTextbook);
+      setMessage("Textbook has been added");
+      setTextbookTitle("");
+      setTextbookPrice(0);
+      setTextbookCondition("used");
+      fetchUnsoldTextbooks(); // refresh list
+    } catch (err: any) {
+      setMessage(err.toString());
+    }
+  };
+
+  const searchTextbook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const results = await textbookService.searchTextbooks(search);
+      // show only unsold results
+      setSearchResults(results.filter((b) => !b.buyer));
+    } catch (err: any) {
+      setMessage(err.toString());
+    }
+  };
+
+  const renderTextbook = (t: Textbook) => (
+    <li key={t._id}>
+      {t.title} {t.price ? `- $${t.price}` : ""} ({t.condition})
+    </li>
+  );
+
+  return (
+    <div id="textbookUIDiv">
+      <h2>Search Textbooks</h2>
+      <input
+        type="text"
+        placeholder="Textbook To Search For"
+        value={search}
+        onChange={handleSearchTextChange}
+      />
+      <button onClick={searchTextbook}>Search</button>
+      <ul>
+        {searchResults.length > 0
+          ? searchResults.map(renderTextbook)
+          : search && <li>No results found</li>}
+      </ul>
+
+      <h2>Add Textbook</h2>
+      <input
+        type="text"
+        placeholder="Textbook To Add"
+        value={textbookTitle}
+        onChange={handleTextbookTextChange}
+      />
+      <input
+        type="number"
+        placeholder="Price"
+        value={textbookPrice}
+        onChange={handlePriceChange}
+      />
+      <select value={textbookCondition} onChange={handleConditionChange}>
+        <option value="new">New</option>
+        <option value="like new">Like New</option>
+        <option value="used">Used</option>
+        <option value="very used">Very Used</option>
+      </select>
+      <button onClick={addTextbook}>Add Textbook</button>
+      {message && <p>{message}</p>}
+
+      <h2>All Unsold Textbooks</h2>
+      <ul>
+        {textbookList.length > 0
+          ? textbookList.map(renderTextbook)
+          : <li>No textbooks available</li>}
+      </ul>
+    </div>
+  );
 }
 
 export default TextbookUI;

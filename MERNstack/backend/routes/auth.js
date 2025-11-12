@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
+const sgMail = require('@sendgrid/mail');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -141,7 +142,8 @@ router.post('/login', async (req, res) => {
       email: user.email,
       phone: user.phone,
       address: user.address,
-      verified: user.verified
+      verified: user.verified,
+      balance: user.balance
     };
 
     res.json({ token, user: userResponse });
@@ -151,5 +153,58 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'No account found with that email'});
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await PasswordResetToken.create({ userId: user._id, token });
+
+    const resetLink = `https://lamp-stack4331.xyz/reset-password/${token}`;
+
+    const msg = {
+      to: email,
+      from: 'no-reply@lamp-stack4331.xyz',
+      subject: 'Reset your Papyrus password!',
+      html: `
+        <h2>Password Reset</h2>
+        <p>Hello ${user.name || ''},</p>
+        <p>Click the link below to reset your password.</p>
+        <a href="${resetLink}" target="_blank">${resetLink}</a>
+        <p>This link will expire in 30 minutes.</p>
+      `
+    };
+
+    await sgMail.send(msg);
+    res.json({ message: 'Password reset link sent'});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const resetToken = await PasswordResetToken.findOne({ token });
+    if (!resetToken) return res.status(400).json({ error: 'Invalid or expired token.' });
+
+    const user = await User.findById(resetToken.userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    user.password = password; // <--- just assign plain password
+    await user.save();        // pre-save hook hashes it automatically
+    await PasswordResetToken.deleteOne({ _id: resetToken._id });
+
+    res.json({ message: 'Password successfully reset.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
 
 module.exports = router;

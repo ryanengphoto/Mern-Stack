@@ -15,13 +15,20 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product, open, onOpenChange }: ProductDetailProps) {
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
   if (!product) return null;
 
   const handleAddToCart = () => {
+    const alreadyInCart = items.some(item => item.product.id === product.id);
+
     addToCart(product);
-    toast.success(`${product.title} added to cart`);
+
+    if (alreadyInCart) {
+      toast(`"${product.title}" is already in your cart`);
+    } else {
+      toast.success(`${product.title} added to cart`);
+    }
   };
 
   return (
@@ -112,8 +119,10 @@ export function ProductDetail({ product, open, onOpenChange }: ProductDetailProp
                 This textbook is in {product.condition.toLowerCase()} condition. 
                 {product.condition === "New" && " Never used, no markings or wear."}
                 {product.condition === "Like New" && " Minimal wear, no markings."}
-                {product.condition === "Good" && " Some wear, may have highlighting."}
-                {product.condition === "Acceptable" && " Significant wear, but fully readable."}
+                {product.condition === "Used" && " Some wear, may have highlighting."}
+                {product.condition === "Very Used" && " Significant wear, but fully readable."}
+              <h4>User Description</h4>
+              <p className="text-muted-foreground">{product.description}</p>
               </p>
             </div>
           </div>

@@ -14,6 +14,8 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<{ message: string }>;
+  submitResetPassword: (token: string, password: string) => Promise<{ message: string }>;
+  updateUser: (updatedUser: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,8 +50,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUser = async (updatedUser: Partial<User>) => {
+    if (!user) return;
+    try {
+      const newUser = await authService.updateUser(updatedUser);
+      setUser(newUser);
+    } catch (err) {
+      console.error(err);
+      throw err; // allows SettingsPage to catch and show toast
+    }
+  };
+
   const resetPassword = async (email: string) => {
     return authService.resetPassword(email);
+  };
+
+  const submitResetPassword = async (token: string, password: string) => {
+    return authService.submitResetPassword(token, password);
   };
 
   return (
@@ -61,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         resetPassword,
+        submitResetPassword,
+        updateUser,
       }}
     >
       {children}

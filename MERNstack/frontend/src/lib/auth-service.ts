@@ -6,6 +6,7 @@ export interface User {
   email: string;
   name: string;
   phone?: string;
+  balance: number;
 }
 
 export interface AuthResponse {
@@ -28,7 +29,7 @@ export const authService = {
 
     const data = await response.json();
     this.storeToken(data.token);
-    this.storeUser(data.user); // ADD THIS LINE
+    this.storeUser(data.user);
     return data;
   },
 
@@ -38,7 +39,6 @@ export const authService = {
     name: string
   ): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/register`, {
-      // CHANGE: signup → register
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
@@ -51,12 +51,12 @@ export const authService = {
 
     const data = await response.json();
     this.storeToken(data.token);
-    this.storeUser(data.user); // ADD THIS LINE
+    this.storeUser(data.user);
     return data;
   },
 
   async resetPassword(email: string): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/auth/reset-password`, {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -68,6 +68,74 @@ export const authService = {
     }
 
     return response.json();
+  },
+
+  async submitResetPassword(token: string, password: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/auth/reset-password/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    let data: any = {};
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || "Password reset failed");
+    }
+
+    return data; // { message: 'Password successfully reset.' }
+  },
+
+  async updateUser(updatedUser: Partial<User>): Promise<User> {
+    const token = this.getStoredToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(`${API_URL}/users/update`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedUser),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Update failed");
+    }
+
+    const data = await response.json();
+    this.storeUser(data.user);
+    return data.user;
+  },
+
+  async addBalance(amount: number): Promise<User> {
+    const token = this.getStoredToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const response = await fetch(`${API_URL}/users/addBalance`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ amount }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to add balance");
+    }
+
+    const data = await response.json();
+    const updatedUser = await this.getUser();
+    if (!updatedUser) throw new Error("Failed to fetch updated user");
+    return updatedUser;
   },
 
   getUser(): User | null {
@@ -95,4 +163,5 @@ export const authService = {
   storeToken(token: string): void {
     localStorage.setItem("auth_token", token);
   },
+
 };

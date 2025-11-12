@@ -27,13 +27,26 @@ interface AddTextbookDialogProps {
   onSuccess: () => void;
 }
 
+const categories = [
+  "Math",
+  "Science",
+  "Computer Science",
+  "Engineering",
+  "Business",
+  "Literature",
+  "Language",
+  "Uncategorized",
+] as const;
+
+type Category = typeof categories[number];
+
 export function AddTextbookDialog({
   open,
   onOpenChange,
   onSuccess,
 }: AddTextbookDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<CreateTextbookData>({
+  const [formData, setFormData] = useState<CreateTextbookData & { category: Category }>({
     title: "",
     author: "",
     isbn: "",
@@ -41,6 +54,7 @@ export function AddTextbookDialog({
     condition: "used",
     description: "",
     images: [],
+    category: "Uncategorized",
   });
   const [imageUrl, setImageUrl] = useState("");
 
@@ -83,6 +97,7 @@ export function AddTextbookDialog({
         condition: "used",
         description: "",
         images: [],
+        category: "Uncategorized",
       });
       setImageUrl("");
 
@@ -108,6 +123,7 @@ export function AddTextbookDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium mb-2">
               Title <span className="text-red-500">*</span>
@@ -123,6 +139,7 @@ export function AddTextbookDialog({
             />
           </div>
 
+          {/* Author */}
           <div>
             <label htmlFor="author" className="block text-sm font-medium mb-2">
               Author
@@ -137,6 +154,7 @@ export function AddTextbookDialog({
             />
           </div>
 
+          {/* ISBN */}
           <div>
             <label htmlFor="isbn" className="block text-sm font-medium mb-2">
               ISBN
@@ -151,6 +169,7 @@ export function AddTextbookDialog({
             />
           </div>
 
+          {/* Price */}
           <div>
             <label htmlFor="price" className="block text-sm font-medium mb-2">
               Price ($) <span className="text-red-500">*</span>
@@ -172,6 +191,7 @@ export function AddTextbookDialog({
             />
           </div>
 
+          {/* Condition */}
           <div>
             <label
               htmlFor="condition"
@@ -181,9 +201,9 @@ export function AddTextbookDialog({
             </label>
             <Select
               value={formData.condition}
-              onValueChange={(
-                value: "new" | "like new" | "used" | "very used"
-              ) => setFormData({ ...formData, condition: value })}
+              onValueChange={(value: "new" | "like new" | "used" | "very used") =>
+                setFormData({ ...formData, condition: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -197,6 +217,37 @@ export function AddTextbookDialog({
             </Select>
           </div>
 
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium mb-2"
+            >
+              Category
+            </label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  category: value as Category,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Description */}
           <div>
             <label
               htmlFor="description"
@@ -215,6 +266,7 @@ export function AddTextbookDialog({
             />
           </div>
 
+          {/* Images */}
           <div>
             <label className="block text-sm font-medium mb-2">Images</label>
             <p className="text-xs text-muted-foreground mb-3">
