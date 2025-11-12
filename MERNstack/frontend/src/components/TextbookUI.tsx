@@ -31,30 +31,69 @@ function TextbookUI() {
     }
   };
 
-  const handleSearchTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  };
+    //add textbook
+    async function addTextbook(e:any) : Promise<void>
+    {
+        e.preventDefault();
+        let obj = {userId:userId,textbook:textbook};
+        let js = JSON.stringify(obj);
+        try
+        {
+            const response = await fetch('https://lamp-stack4331.xyz/api/addtextbook',
+                {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+            
+            let txt = await response.text();
+            let res = JSON.parse(txt);
+            
+            if( res.error.length > 0 )
+            {
+                setMessage( "API Error:" + res.error );
+            }
+            else
+            {
+                setMessage('Textbook has been added');
+            }
+        }
+        catch(error:any)
+        {
+            setMessage(error.toString());
+        }
+    };
 
-  const handleTextbookTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTextbookTitle(e.target.value);
-  };
+    //search textbook
+    async function searchTextbook(e:any) : Promise<void>
+    {
+        e.preventDefault();
+        let obj = {userId:userId,search:search};
+        let js = JSON.stringify(obj);
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTextbookPrice(Number(e.target.value));
-  };
+        try
+        {
+            const response = await fetch('https://lamp-stack4331.xyz/api/searchtextbooks',
+                {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
+            
+            let txt = await response.text();
+            let res = JSON.parse(txt);
+            let _results = res.results;
+            let resultText = '';
 
-  const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTextbookCondition(e.target.value as any);
-  };
-
-  const addTextbook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!textbookTitle) return setMessage("Title is required");
-
-    const newTextbook: CreateTextbookData = {
-      title: textbookTitle,
-      price: textbookPrice,
-      condition: textbookCondition,
+            for( let i=0; i<_results.length; i++ )
+            {
+                resultText += _results[i];
+                if( i < _results.length - 1 )
+                {
+                    resultText += ', ';
+                }
+            }
+            
+            setResults('Textbook(s) have been retrieved');
+            setTextbookList(resultText);
+        }
+        catch(error:any)
+        {
+            alert(error.toString());
+            setResults(error.toString());
+        }
     };
 
     try {
