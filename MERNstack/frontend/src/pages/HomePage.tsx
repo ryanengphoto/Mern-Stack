@@ -53,12 +53,14 @@ export function HomePage({ searchQuery }: HomePageProps) {
 
   useEffect(() => {
     loadTextbooks();
-  }, []);
+  }, [searchQuery]);
 
   const loadTextbooks = async () => {
     try {
       setIsLoading(true);
-      const data = await textbookService.getAllTextbooks();
+      const data = searchQuery
+        ? await textbookService.searchTextbooks(searchQuery)
+        : await textbookService.getAllTextbooks();
       setTextbooks(data);
     } catch (error) {
       toast.error("Failed to load textbooks");
@@ -73,10 +75,7 @@ export function HomePage({ searchQuery }: HomePageProps) {
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
       selectedCategory === "All" || product.category === selectedCategory;
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.author.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory;
   });
 
   const handleProductClick = (product: Product) => {
