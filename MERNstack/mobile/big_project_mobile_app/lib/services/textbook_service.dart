@@ -12,7 +12,9 @@ class Textbook {
   final double price;
   final String condition;
   final List<String> images;
-  final String? buyer; // null if unsold
+  final String? buyer;
+  final String? sellerId;
+  final String? sellerName;
 
   Textbook({
     required this.id,
@@ -22,9 +24,12 @@ class Textbook {
     required this.condition,
     required this.images,
     this.buyer,
+    this.sellerId,
+    this.sellerName,
   });
 
   factory Textbook.fromJson(Map<String, dynamic> json) {
+    // images may be array or string
     final rawImages = json['images'];
     List<String> images = [];
     if (rawImages is List) {
@@ -33,14 +38,34 @@ class Textbook {
       images = [rawImages];
     }
 
+    // price might be int or double
+    double price = 0;
+    final rawPrice = json['price'];
+    if (rawPrice is num) {
+      price = rawPrice.toDouble();
+    } else if (rawPrice is String) {
+      price = double.tryParse(rawPrice) ?? 0;
+    }
+
+    // seller populated from backend: seller: { _id, name, email, phone }
+    String? sellerId;
+    String? sellerName;
+    final seller = json['seller'];
+    if (seller is Map<String, dynamic>) {
+      sellerId = seller['_id']?.toString();
+      sellerName = seller['name']?.toString();
+    }
+
     return Textbook(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       author: (json['author'] ?? 'Unknown Author').toString(),
-      price: (json['price'] ?? 0).toDouble(),
+      price: price,
       condition: (json['condition'] ?? 'used').toString(),
       images: images,
       buyer: json['buyer']?.toString(),
+      sellerId: sellerId,
+      sellerName: sellerName,
     );
   }
 }
@@ -57,8 +82,9 @@ class TextbookService {
 
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      final list = data['textbooks'] as List<dynamic>;
-      final allBooks = list.map((e) => Textbook.fromJson(e)).toList();
+      final list = (data['textbooks'] as List<dynamic>);
+      final allBooks =
+          list.map((e) => Textbook.fromJson(e as Map<String, dynamic>)).toList();
 
       // Hide purchased books on the mobile side
       return allBooks
@@ -80,10 +106,10 @@ class TextbookService {
 
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      final list = data['results'] as List<dynamic>;
-      final allBooks = list.map((e) => Textbook.fromJson(e)).toList();
+      final list = (data['results'] as List<dynamic>);
+      final allBooks =
+          list.map((e) => Textbook.fromJson(e as Map<String, dynamic>)).toList();
 
-      // Same filter: hide purchased
       return allBooks
           .where((b) => b.buyer == null || b.buyer!.isEmpty)
           .toList();
@@ -92,7 +118,20 @@ class TextbookService {
     }
   }
 
-  /// Use existing /api/textbooks/purchase route (no backend change).
+  /// Books for the currently logged in user (as seller).
+  Future<List<Textbook>> getMyTextbooks() async {
+    if (AuthService.currentUser == null) {
+      throw Exception('Not signed in');
+    }
+    final user = AuthService.currentUser!;
+    final userId =
+        (user['_id'] ?? user['id'] ?? '').toString(); // be flexible about key
+
+    final all = await getAllTextbooks();
+    return all.where((b) => b.sellerId == userId).toList();
+  }
+
+  /// Use existing /api/textbooks/purchase route.
   Future<Map<String, dynamic>> purchaseTextbook(
     String id,
     String shippingAddress,
@@ -109,14 +148,13 @@ class TextbookService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${AuthService.authToken}',
       },
-      // Backend only uses "id"; shippingAddress is extra and safely ignored.
       body: jsonEncode({'id': id, 'shippingAddress': shippingAddress}),
     );
 
     if (res.statusCode == 200) {
       return {'success': true};
     } else {
-      final data = jsonDecode(res.body);
+      final data = _safeJson(res.body);
       return {
         'success': false,
         'message': data['error'] ?? 'Failed to purchase',
@@ -125,8 +163,6 @@ class TextbookService {
   }
 
   /// Create a new textbook listing for the signed-in user.
-  /// Matches backend /api/textbooks/add:
-  /// { title, author, isbn, price, condition, description, images }
   Future<Map<String, dynamic>> addTextbook({
     required String title,
     required String author,
@@ -149,7 +185,6 @@ class TextbookService {
       'price': price,
       'condition': condition,
       'description': description,
-      // backend expects array of image URLs
       'images': imageUrl.trim().isEmpty ? [] : [imageUrl.trim()],
     };
 
@@ -162,18 +197,108 @@ class TextbookService {
       body: jsonEncode(body),
     );
 
+    final data = _safeJson(res.body);
+
     if (res.statusCode == 201) {
-      final data = jsonDecode(res.body);
       return {
         'success': true,
-        'textbook': data,
+        'textbook': data['textbook'] ?? data,
       };
     } else {
-      final data = jsonDecode(res.body);
       return {
         'success': false,
         'message': data['error'] ?? 'Failed to create textbook',
       };
+    }
+  }
+
+  /// Update an existing textbook listing owned by the current user.
+  Future<Map<String, dynamic>> updateTextbook({
+    required String id,
+    required String title,
+    required String author,
+    required String isbn,
+    required double price,
+    required String condition,
+    required String description,
+    required String imageUrl,
+  }) async {
+    if (AuthService.authToken == null) {
+      return {'success': false, 'message': 'You must be logged in to edit'};
+    }
+
+    final uri = Uri.parse('$apiBaseUrl/api/textbooks/update');
+
+    final body = {
+      'id': id,
+      'title': title,
+      'author': author,
+      'isbn': isbn,
+      'price': price,
+      'condition': condition,
+      'description': description,
+      'images': imageUrl.trim().isEmpty ? [] : [imageUrl.trim()],
+    };
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AuthService.authToken}',
+      },
+      body: jsonEncode(body),
+    );
+
+    final data = _safeJson(res.body);
+
+    if (res.statusCode == 200) {
+      return {
+        'success': true,
+        'textbook': data['textbook'] ?? data,
+      };
+    } else {
+      return {
+        'success': false,
+        'message': data['error'] ?? 'Failed to update textbook',
+      };
+    }
+  }
+
+  /// Delete an existing textbook listing owned by the current user.
+  Future<Map<String, dynamic>> deleteTextbook(String id) async {
+    if (AuthService.authToken == null) {
+      return {'success': false, 'message': 'You must be logged in to delete'};
+    }
+
+    final uri = Uri.parse('$apiBaseUrl/api/textbooks/delete');
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AuthService.authToken}',
+      },
+      body: jsonEncode({'id': id}),
+    );
+
+    final data = _safeJson(res.body);
+
+    if (res.statusCode == 200) {
+      return {'success': true};
+    } else {
+      return {
+        'success': false,
+        'message': data['error'] ?? 'Failed to delete textbook',
+      };
+    }
+  }
+
+  Map<String, dynamic> _safeJson(String body) {
+    try {
+      final v = jsonDecode(body);
+      return (v is Map<String, dynamic>) ? v : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
     }
   }
 }

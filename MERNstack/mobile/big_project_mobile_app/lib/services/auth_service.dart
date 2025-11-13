@@ -19,35 +19,22 @@ class AuthService {
       body: jsonEncode({'email': email, 'password': password}),
     );
 
+    final data = _safeJson(res.body);
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
       authToken = data['token'];
       currentUser = data['user'];
-
-      return {
-        'success': true,
-        'token': data['token'],
-        'user': data['user'],
-      };
+      return {'success': true, 'token': data['token'], 'user': data['user']};
     } else {
-      final data = jsonDecode(res.body);
-      return {
-        'success': false,
-        'message': data['error'] ?? 'Login failed',
-      };
+      return {'success': false, 'message': data['error'] ?? 'Login failed'};
     }
   }
 
   /// Adds $100 demo funds using /api/users/addBalance, then fetches /api/users/me.
   Future<Map<String, dynamic>> addDemoFunds() async {
     if (authToken == null) {
-      return {
-        'success': false,
-        'message': 'You must be logged in to add funds',
-      };
+      return {'success': false, 'message': 'You must be logged in to add funds'};
     }
 
-    // 1) Add $100
     final addUri = Uri.parse('$apiBaseUrl/api/users/addBalance');
     final addRes = await http.post(
       addUri,
@@ -58,14 +45,10 @@ class AuthService {
     );
 
     if (addRes.statusCode != 200) {
-      final data = jsonDecode(addRes.body);
-      return {
-        'success': false,
-        'message': data['error'] ?? 'Failed to add funds',
-      };
+      final data = _safeJson(addRes.body);
+      return {'success': false, 'message': data['error'] ?? 'Failed to add funds'};
     }
 
-    // 2) Fetch updated user (with new balance)
     final meUri = Uri.parse('$apiBaseUrl/api/users/me');
     final meRes = await http.post(
       meUri,
@@ -76,19 +59,53 @@ class AuthService {
     );
 
     if (meRes.statusCode == 200) {
-      final data = jsonDecode(meRes.body);
-      final user = data['user'] as Map<String, dynamic>;
+      final data = _safeJson(meRes.body);
+      final user = (data['user'] as Map<String, dynamic>? ?? {});
       currentUser = user;
       final rawBalance = user['balance'];
       final balance = (rawBalance is num) ? rawBalance.toDouble() : 0.0;
-
-      return {
-        'success': true,
-        'balance': balance,
-      };
+      return {'success': true, 'balance': balance};
     }
-
-    // funds were added, but /me failed – still a success, just no exact balance
     return {'success': true};
+  }
+
+  /// Registers a new user and stores token + user.
+  /// Adjust the endpoint path if your backend uses '/api/auth/signup' instead.
+  Future<Map<String, dynamic>> register({
+    required String email,
+    required String password,
+    String? name,
+  }) async {
+    final uri = Uri.parse('$apiBaseUrl/api/auth/register'); // change to /signup if needed
+
+    final body = {
+      'email': email,
+      'password': password,
+      if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+    };
+
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    final data = _safeJson(res.body);
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      authToken = data['token'];
+      currentUser = data['user'];
+      return {'success': true, 'token': data['token'], 'user': data['user']};
+    } else {
+      return {'success': false, 'message': data['error'] ?? 'Registration failed'};
+    }
+  }
+
+  Map<String, dynamic> _safeJson(String body) {
+    try {
+      final v = jsonDecode(body);
+      return (v is Map<String, dynamic>) ? v : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
   }
 }

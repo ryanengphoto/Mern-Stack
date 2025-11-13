@@ -5,6 +5,7 @@ import '../services/textbook_service.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'sell_textbook_screen.dart';
+import 'your_listings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -68,10 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _searchBooks() async {
     final query = _searchCtrl.text.trim();
     if (query.isEmpty) {
+      _selectedCategory = 'All';
       _loadTextbooks();
       return;
     }
+    await _searchBooksWithQuery(query);
+  }
 
+  Future<void> _searchBooksWithQuery(String query) async {
     setState(() {
       _loading = true;
       _error = '';
@@ -115,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
-      setState(() {}); // refresh balance
+      setState(() {}); // refresh balance display
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -133,56 +138,122 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final cartBooks =
-        _textbooks.where((b) => _cart.contains(b.id)).toList();
-    final total =
-        cartBooks.fold<double>(0, (sum, b) => sum + b.price);
-
-    _addressCtrl.text = _addressCtrl.text; // keep whatever user typed
-
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Cart / Checkout'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Items: ${_cart.length}'),
-              const SizedBox(height: 4),
-              Text('Total: \$${total.toStringAsFixed(2)}'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _addressCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Shipping address',
-                  hintText: '123 University Ave, Dorm #123',
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setInnerState) {
+            final cartBooks =
+                _textbooks.where((b) => _cart.contains(b.id)).toList();
+            final total =
+                cartBooks.fold<double>(0, (sum, b) => sum + b.price);
+
+            return AlertDialog(
+              title: const Text('Cart / Checkout'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (cartBooks.isEmpty)
+                      const Text('Your cart is empty.')
+                    else ...[
+                      SizedBox(
+                        height: 220,
+                        child: ListView.builder(
+                          itemCount: cartBooks.length,
+                          itemBuilder: (context, index) {
+                            final book = cartBooks[index];
+                            return ListTile(
+                              leading: book.images.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        book.images[0],
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Icon(Icons
+                                                .image_not_supported_outlined),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.menu_book_outlined,
+                                    ),
+                              title: Text(
+                                book.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                '\$${book.price.toStringAsFixed(2)} • ${book.author}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: IconButton(
+                                tooltip: 'Remove from cart',
+                                icon: const Icon(
+                                  Icons.remove_circle_outline,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () {
+                                  // Update parent state (cart + cards)
+                                  setState(() {
+                                    _cart.remove(book.id);
+                                  });
+                                  // Rebuild dialog contents
+                                  setInnerState(() {});
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Total: \$${total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _addressCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Shipping address',
+                        hintText: '123 University Ave, Dorm #123',
+                      ),
+                      maxLines: 2,
+                    ),
+                    if (_checkingOut)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: LinearProgressIndicator(),
+                      ),
+                  ],
                 ),
-                maxLines: 2,
               ),
-              const SizedBox(height: 8),
-              if (_checkingOut)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: LinearProgressIndicator(),
+              actions: [
+                TextButton(
+                  onPressed:
+                      _checkingOut ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
                 ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed:
-                  _checkingOut ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: _checkingOut
-                  ? null
-                  : () async {
-                      await _handleCheckout();
-                    },
-              child: const Text('Checkout'),
-            ),
-          ],
+                FilledButton(
+                  onPressed: (_checkingOut || _cart.isEmpty)
+                      ? null
+                      : () async => await _handleCheckout(),
+                  child: const Text('Checkout'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -259,6 +330,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final baseBg = const Color(0xFFF0E6D9); // beige-ish
 
+    // compute balance if logged in
+    double balance = 0.0;
+    if (AuthService.currentUser != null) {
+      final raw = AuthService.currentUser!['balance'];
+      if (raw is num) {
+        balance = raw.toDouble();
+      }
+    }
+
     return Scaffold(
       backgroundColor: baseBg,
       appBar: AppBar(
@@ -267,11 +347,26 @@ class _HomeScreenState extends State<HomeScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            const Icon(Icons.menu_book_outlined),
-            const SizedBox(width: 8),
-            const Text(
-              'Papyrus',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            InkWell(
+              onTap: () {
+                // "Logo" goes back to home: clear filters & reload
+                _searchCtrl.clear();
+                setState(() {
+                  _selectedCategory = 'All';
+                });
+                _loadTextbooks();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.menu_book_outlined),
+                  SizedBox(width: 8),
+                  Text(
+                    'Papyrus',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -299,24 +394,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Center(
-              child: Builder(
-                builder: (context) {
-                  double balance = 0.0;
-                  if (AuthService.currentUser != null) {
-                    final raw = AuthService.currentUser!['balance'];
-                    if (raw is num) {
-                      balance = raw.toDouble();
-                    }
-                  }
-                  return Text(
-                    '\$${balance.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  );
-                },
+              child: Text(
+                '\$${balance.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ),
@@ -362,6 +446,32 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
+          // Your Listings
+          TextButton(
+            onPressed: () async {
+              if (AuthService.authToken == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please sign in to view your listings'),
+                  ),
+                );
+                return;
+              }
+
+              final changed = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const YourListingsScreen(),
+                ),
+              );
+
+              if (changed == true) {
+                _loadTextbooks();
+              }
+            },
+            child: const Text('Your Listings'),
+          ),
+
           // Login button
           TextButton(
             onPressed: () async {
@@ -371,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder: (_) => const LoginScreen(),
                 ),
               );
-              setState(() {}); // refresh after login
+              setState(() {}); // refresh balance and auth state
             },
             child: const Text('Sign In'),
           ),
@@ -381,6 +491,16 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(right: 12.0),
             child: FilledButton(
               onPressed: () async {
+                if (AuthService.authToken == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Please sign in to list a textbook'),
+                    ),
+                  );
+                  return;
+                }
+
                 final created = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -400,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Categories row (visual only for now)
+          // Categories row (now functional)
           SizedBox(
             height: 48,
             child: ListView.separated(
@@ -413,10 +533,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ChoiceChip(
                   label: Text(cat),
                   selected: selected,
-                  onSelected: (_) {
+                  onSelected: (_) async {
                     setState(() {
                       _selectedCategory = cat;
                     });
+
+                    if (cat == 'All') {
+                      _searchCtrl.clear();
+                      await _loadTextbooks();
+                    } else {
+                      _searchCtrl.text = cat;
+                      await _searchBooksWithQuery(cat);
+                    }
                   },
                 );
               },
@@ -500,7 +628,7 @@ class _TextbookCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          // TODO: navigate to details page if you add one
+          // TODO: details page if you want
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -578,8 +706,10 @@ class _TextbookCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    book.condition[0].toUpperCase() +
-                        book.condition.substring(1),
+                    book.condition.isNotEmpty
+                        ? book.condition[0].toUpperCase() +
+                            book.condition.substring(1)
+                        : '',
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 8),
