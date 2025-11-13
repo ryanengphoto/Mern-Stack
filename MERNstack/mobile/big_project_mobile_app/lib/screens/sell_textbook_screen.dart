@@ -5,7 +5,9 @@ import '../services/textbook_service.dart';
 import '../services/auth_service.dart';
 
 class SellTextbookScreen extends StatefulWidget {
-  const SellTextbookScreen({super.key});
+  final Textbook? existingBook; // null = add, non-null = edit
+
+  const SellTextbookScreen({super.key, this.existingBook});
 
   @override
   State<SellTextbookScreen> createState() => _SellTextbookScreenState();
@@ -23,9 +25,27 @@ class _SellTextbookScreenState extends State<SellTextbookScreen> {
 
   final TextbookService _textbookService = TextbookService();
 
-  String _condition = 'used'; // default
+  late bool _isEditing;
+  String _condition = 'used';
   bool _submitting = false;
   String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _isEditing = widget.existingBook != null;
+
+    if (_isEditing) {
+      final b = widget.existingBook!;
+      _titleCtrl.text = b.title;
+      _authorCtrl.text = b.author;
+      _priceCtrl.text = b.price.toStringAsFixed(2);
+      _condition = b.condition;
+      // ISBN, description, image URL can't be inferred from current model,
+      // but if your backend returns them you can fill them here.
+      // For now, we leave them blank.
+    }
+  }
 
   @override
   void dispose() {
@@ -57,15 +77,29 @@ class _SellTextbookScreenState extends State<SellTextbookScreen> {
 
     final price = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
 
-    final res = await _textbookService.addTextbook(
-      title: _titleCtrl.text.trim(),
-      author: _authorCtrl.text.trim(),
-      isbn: _isbnCtrl.text.trim(),
-      price: price,
-      condition: _condition,
-      description: _descriptionCtrl.text.trim(),
-      imageUrl: _imageUrlCtrl.text.trim(),
-    );
+    Map<String, dynamic> res;
+    if (_isEditing) {
+      res = await _textbookService.updateTextbook(
+        id: widget.existingBook!.id,
+        title: _titleCtrl.text.trim(),
+        author: _authorCtrl.text.trim(),
+        isbn: _isbnCtrl.text.trim(),
+        price: price,
+        condition: _condition,
+        description: _descriptionCtrl.text.trim(),
+        imageUrl: _imageUrlCtrl.text.trim(),
+      );
+    } else {
+      res = await _textbookService.addTextbook(
+        title: _titleCtrl.text.trim(),
+        author: _authorCtrl.text.trim(),
+        isbn: _isbnCtrl.text.trim(),
+        price: price,
+        condition: _condition,
+        description: _descriptionCtrl.text.trim(),
+        imageUrl: _imageUrlCtrl.text.trim(),
+      );
+    }
 
     setState(() {
       _submitting = false;
@@ -73,20 +107,29 @@ class _SellTextbookScreenState extends State<SellTextbookScreen> {
 
     if (res['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Textbook listed successfully')),
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? 'Textbook updated successfully'
+                : 'Textbook listed successfully',
+          ),
+        ),
       );
       Navigator.pop(context, true); // tell previous screen to refresh
     } else {
       setState(() {
-        _error = res['message'] ?? 'Failed to list textbook';
+        _error = res['message'] ??
+            (_isEditing ? 'Failed to update textbook' : 'Failed to list textbook');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = _isEditing ? 'Edit Listing' : 'Sell a Textbook';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Sell a Textbook')),
+      appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -202,7 +245,7 @@ class _SellTextbookScreenState extends State<SellTextbookScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('List Textbook'),
+                      : Text(_isEditing ? 'Save Changes' : 'List Textbook'),
                 ),
               ),
             ],
