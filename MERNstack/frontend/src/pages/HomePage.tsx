@@ -19,7 +19,7 @@ const textbookToProduct = (textbook: Textbook): Product => {
     author: textbook.author || "Unknown Author",
     edition: "",
     price: textbook.price,
-    condition: conditionMap[textbook.condition],
+    condition: conditionMap[textbook.condition?.toLowerCase()] || "Used",
     image: textbook.images?.[0] || "",
     seller: typeof textbook.seller === "string" ? "" : (textbook.seller as any)?.name || "",
     location: "",
