@@ -109,12 +109,6 @@ export function LoginDialog({
             </button>
           </p>
         </div>
-
-        <div className="bg-muted p-4 rounded-lg">
-          <p className="text-muted-foreground">Demo credentials:</p>
-          <p>Email: demo@baye.com</p>
-          <p>Password: password123</p>
-        </div>
       </DialogContent>
     </Dialog>
   );
